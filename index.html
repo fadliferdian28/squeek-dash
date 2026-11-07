@@ -375,6 +375,7 @@
             <button class="mbtn" id="liveBtn" type="button">Live feed</button>
             <button class="mbtn" id="genesisBtn" type="button">My Genesis run</button>
             <button class="mbtn" id="checkinOpenBtn" type="button">Daily check-in</button>
+            <button class="mbtn" id="heroSoundBtn" type="button" aria-pressed="true">♪ Music: on</button>
           </div>
         </div>
       </section>
@@ -701,7 +702,12 @@
       }, 5000);
 
       /* ---------------- sound (Web Audio beeps) ---------------- */
+      var SOUND_KEY = "squeekmaze.sound";
       var soundOn = true, actx = null;
+      try {
+        var savedSound = localStorage.getItem(SOUND_KEY);
+        if (savedSound !== null) soundOn = savedSound !== "off";
+      } catch (e) { soundOn = true; }
       function audio() {
         if (!actx) {
           var AC = window.AudioContext || window.webkitAudioContext;
@@ -728,14 +734,87 @@
         nest:   function () { beep(523, 523, 0.09, "sine", 0.09); beep(659, 659, 0.09, "sine", 0.09, 0.09); beep(784, 1046, 0.16, "sine", 0.1, 0.18); },
         bite:   function () { beep(220, 40, 0.32, "sawtooth", 0.12); beep(140, 30, 0.36, "square", 0.08, 0.03); },
         over:   function () { beep(392, 392, 0.14, "square", 0.08); beep(330, 330, 0.14, "square", 0.08, 0.15); beep(262, 196, 0.3, "square", 0.08, 0.3); },
-        locked: function () { beep(180, 140, 0.1, "square", 0.06); }
+        locked: function () { beep(180, 140, 0.1, "square", 0.06); },
+        click:  function () { beep(1250, 950, 0.05, "sine", 0.03); },
+        start:  function () { beep(659, 659, 0.09, "sine", 0.09); beep(988, 988, 0.14, "sine", 0.1, 0.09); }
       };
-      el("soundBtn").addEventListener("click", function () {
+
+      /* ---------------- background music (synthesized chiptune loop) ----------------
+         A cheerful 8-bit-style melody + soft bass line, scheduled with the
+         same lazy AudioContext as the beeps — no audio files. It starts on
+         the visitor's first interaction anywhere on the page (browsers
+         block audio autoplay before a user gesture), then keeps playing
+         across the hero and the game, and it obeys the same soundOn gate:
+         while sound is off the scheduler advances silently, so toggling
+         sound back on resumes the tune in step. Volume sits well below
+         the game beeps. */
+      var MEL = [72, 76, 79, 76, 81, 79, 76, 72, 74, 76, 79, 81, 79, 76, 74, 0,
+                 72, 76, 79, 76, 81, 79, 84, 79, 76, 79, 81, 79, 76, 74, 72, 0];
+      var BASS = [48, 43, 45, 41, 48, 43, 45, 41, 48, 43, 45, 41, 48, 43, 48, 43];
+      var MUSIC_STEP = 0.21;   // seconds per eighth note (~143 BPM eighths)
+      var musicTimer = null, musicStep = 0, musicNextTime = 0;
+      function midiFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+      function musicNote(freq, t0, dur, vol, type) {
+        var o = actx.createOscillator(), g = actx.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, t0);
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+        o.connect(g); g.connect(actx.destination);
+        o.start(t0); o.stop(t0 + dur + 0.02);
+      }
+      function scheduleMusic() {
+        if (!actx) return;
+        while (musicNextTime < actx.currentTime + 0.15) {
+          if (soundOn) {
+            var idx = musicStep % MEL.length;
+            if (MEL[idx]) musicNote(midiFreq(MEL[idx]), musicNextTime, MUSIC_STEP * 0.92, 0.03, "triangle");
+            if (idx % 2 === 0) {
+              var bn = BASS[(idx / 2) % BASS.length];
+              if (bn) musicNote(midiFreq(bn), musicNextTime, MUSIC_STEP * 1.8, 0.018, "sine");
+            }
+          }
+          musicNextTime += MUSIC_STEP;
+          musicStep += 1;
+        }
+      }
+      function startMusic() {
+        var ac = audio(); if (!ac || musicTimer) return;
+        musicStep = 0;
+        musicNextTime = ac.currentTime + 0.08;
+        musicTimer = setInterval(scheduleMusic, 40);
+      }
+      function stopMusic() {
+        if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+      }
+
+      function syncSoundLabels() {
+        var on = soundOn ? "true" : "false";
+        el("soundBtn").textContent = soundOn ? "Sound: on" : "Sound: off";
+        el("soundBtn").setAttribute("aria-pressed", on);
+        var hb = el("heroSoundBtn");
+        if (hb) {
+          hb.textContent = soundOn ? "♪ Music: on" : "♪ Music: off";
+          hb.setAttribute("aria-pressed", on);
+        }
+      }
+      function toggleSound() {
         soundOn = !soundOn;
-        this.textContent = soundOn ? "Sound: on" : "Sound: off";
-        this.setAttribute("aria-pressed", soundOn ? "true" : "false");
+        syncSoundLabels();
+        try { localStorage.setItem(SOUND_KEY, soundOn ? "on" : "off"); } catch (e) {}
         if (soundOn) sfx.cheese();
-      });
+      }
+      syncSoundLabels();
+      el("soundBtn").addEventListener("click", toggleSound);
+
+      /* Browsers block audio before the first user gesture, so the page
+         music starts on the visitor's very first click, tap, or keypress
+         anywhere — landing screen included — and then keeps playing
+         across the hero and the game until Sound is switched off.
+         startMusic() is idempotent, so these listeners can stay live. */
+      document.addEventListener("pointerdown", function () { startMusic(); });
+      document.addEventListener("keydown", function () { startMusic(); });
       el("copyBtn").addEventListener("click", function () {
         var btn = this;
         function done() { btn.textContent = "Copied ✓"; setTimeout(function () { btn.textContent = "Copy code"; }, 1600); }
@@ -1129,6 +1208,8 @@
         el("overlay").hidden = true;
         el("restartBtn").disabled = false;
         audio();
+        sfx.start();
+        startMusic();
       }
       function nextLevel() {
         level += 1;
@@ -1253,10 +1334,12 @@
         audio();
       }, { passive: true });
       el("ovBtn").addEventListener("click", function () {
+        sfx.click();
         if (state === "clear") nextLevel();
         else startRun();
       });
       el("ovClose").addEventListener("click", function () {
+        sfx.click();
         // Dismiss the game-over screen back to the start/idle screen
         // without starting a new run.
         if (state !== "over") return;
@@ -1746,21 +1829,23 @@
       el("playBtn").addEventListener("click", function () {
         closeAllModals();
         showView("game");
-        if (state === "ready") startRun();
+        if (state === "ready") startRun();   // startRun plays the start jingle + music
+        else sfx.click();
       });
-      el("homeBtn").addEventListener("click", function () { showView("home"); });
+      el("homeBtn").addEventListener("click", function () { sfx.click(); showView("home"); });
       el("brandBtn").addEventListener("click", function () { closeAllModals(); showView("home"); });
-      el("howBtn").addEventListener("click", function () { openModal("howModal"); });
-      el("liveBtn").addEventListener("click", function () { openModal("liveModal"); });
-      el("genesisBtn").addEventListener("click", function () { openModal("genesisModal"); });
-      el("checkinOpenBtn").addEventListener("click", function () { openModal("checkinModal"); });
+      el("howBtn").addEventListener("click", function () { sfx.click(); openModal("howModal"); });
+      el("liveBtn").addEventListener("click", function () { sfx.click(); openModal("liveModal"); });
+      el("genesisBtn").addEventListener("click", function () { sfx.click(); openModal("genesisModal"); });
+      el("checkinOpenBtn").addEventListener("click", function () { sfx.click(); openModal("checkinModal"); });
+      el("heroSoundBtn").addEventListener("click", function () { toggleSound(); });
       document.querySelectorAll(".modal").forEach(function (m) {
         m.addEventListener("click", function (e) {
           if (e.target === m || e.target.classList.contains("backdrop")) closeAllModals();
         });
       });
       document.querySelectorAll("[data-close]").forEach(function (b) {
-        b.addEventListener("click", closeAllModals);
+        b.addEventListener("click", function () { sfx.click(); closeAllModals(); });
       });
 
       /* ---- boot ---- */
