@@ -1412,10 +1412,10 @@
       function gameOver() {
         state = "over";
         sfx.over();
-        lockLivesToday();   // nyawa habis — no more play until the 07:00 WIB reset
+        lockLivesToday();   // out of lives — no more play until the 07:00 WIB reset
         var isBest = saveBest();
         showOverlay("Out of lives",
-          "The beetles win this round — Squeektoshi is fine, just very dizzy. That was your one life for today (<strong>nyawa habis</strong>): play unlocks again at the daily reset, <strong>tomorrow at 07:00 WIB</strong>. The maze from block <strong>#" + fmtInt(mazeSeedBlock) + "</strong> will still be here then.",
+          "The beetles win this round — Squeektoshi is fine, just very dizzy. That was your one life for today (<strong>out of lives</strong>): play unlocks again at the daily reset, <strong>tomorrow at 07:00 WIB</strong>. The maze from block <strong>#" + fmtInt(mazeSeedBlock) + "</strong> will still be here then.",
           "Back tomorrow", true, isBest);
         lastRun = { score: Math.floor(score), level: level, cheese: runCheese, time: runElapsed };
         el("sumTime").textContent = fmtTime(runElapsed);
@@ -1451,7 +1451,7 @@
         // screen, THEN respawn at the start. Movement input is ignored
         // while state === "dead" (see the input handlers and update()).
         var hf = el("hitFlash");
-        hf.textContent = "Kena kumbang! −1 nyawa";
+        hf.textContent = "Beetle bite! −1 life";
         hf.hidden = false;
         hitTimer = 1.0;
         deathTimer = 1.0;
@@ -1966,28 +1966,63 @@
         var pb = el("heroPaidMintBtn");
         if (pb) pb.hidden = !(cardHasPaidMinted === false && !paidSoldOut);
       }
+      /* Sepolia read endpoints, best first. 1rpc.io/sepolia was dropped:
+         it now rejects even eth_blockNumber without a paid plan (HTTP
+         400 / usage-limit errors), and eth-sepolia.api.onfinality.io
+         rate-limits bursts (HTTP 429) — it stays only as a last resort.
+         Tenderly's public Sepolia gateway sits between them: it answered
+         eth_call and wide eth_getLogs scans cleanly when this list was
+         last verified. */
       var SEPOLIA_RPC_URLS = [
         "https://ethereum-sepolia-rpc.publicnode.com",
-        "https://eth-sepolia.api.onfinality.io/public",
-        "https://1rpc.io/sepolia"
+        "https://sepolia.gateway.tenderly.co",
+        "https://eth-sepolia.api.onfinality.io/public"
       ];
-      var _sepoliaReadProvider = null;
-      function sepoliaReadProvider() {
-        if (_sepoliaReadProvider) return _sepoliaReadProvider;
-        var providers = SEPOLIA_RPC_URLS.map(function (u) {
-          return new ethers.JsonRpcProvider(u, 11155111, { staticNetwork: true });
-        });
-        _sepoliaReadProvider = new ethers.FallbackProvider(providers, 11155111, { quorum: 1 });
-        return _sepoliaReadProvider;
+      /* Sequential failover — deliberately NOT ethers.FallbackProvider.
+         The FallbackProvider broadcast every read to ALL endpoints at
+         once and then tried to merge their answers: it tripled the
+         request volume (feeding the 429s), and whenever the endpoints
+         disagreed or one errored, ethers threw "could not coalesce
+         error" / "missing response for request" — exactly the home
+         screen, CARDS FOR SALE (400) and RECENT ACTIVITY errors this
+         replaces. Reads now run against ONE endpoint at a time through
+         rpcRead(); if a read fails, the whole read is retried on the
+         next endpoint before anything shows an error.
+         batchMaxCount: 1 keeps every call a plain single JSON-RPC
+         request — some public endpoints reject batched payloads. */
+      var _rpcProviders = null, _rpcGood = 0;
+      function rpcProviderList() {
+        if (!_rpcProviders) {
+          _rpcProviders = SEPOLIA_RPC_URLS.map(function (u) {
+            return new ethers.JsonRpcProvider(u, 11155111, { staticNetwork: true, batchMaxCount: 1 });
+          });
+        }
+        return _rpcProviders;
       }
-      function cardRead() {
-        return new ethers.Contract(CARD_ADDRESS, CARD_ABI, sepoliaReadProvider());
+      function sepoliaReadProvider() { return rpcProviderList()[_rpcGood]; }
+      /* Run fn(provider) against one Sepolia RPC; on any error, rotate
+         to the next endpoint and run the whole read again there. The
+         endpoint that last succeeded is tried first next time. */
+      async function rpcRead(fn) {
+        var list = rpcProviderList(), lastErr = null;
+        for (var k = 0; k < list.length; k++) {
+          var idx = (_rpcGood + k) % list.length;
+          try {
+            var out = await fn(list[idx]);
+            _rpcGood = idx;
+            return out;
+          } catch (e) { lastErr = e; }
+        }
+        throw lastErr || new Error("all Sepolia RPC endpoints are unreachable");
       }
-      function marketRead() {
-        return new ethers.Contract(MARKET_ADDRESS, MARKET_ABI, sepoliaReadProvider());
+      function cardRead(p) {
+        return new ethers.Contract(CARD_ADDRESS, CARD_ABI, p || sepoliaReadProvider());
       }
-      function checkinRead() {
-        return new ethers.Contract(CHECKIN_ADDRESS, CHECKIN_ABI, sepoliaReadProvider());
+      function marketRead(p) {
+        return new ethers.Contract(MARKET_ADDRESS, MARKET_ABI, p || sepoliaReadProvider());
+      }
+      function checkinRead(p) {
+        return new ethers.Contract(CHECKIN_ADDRESS, CHECKIN_ABI, p || sepoliaReadProvider());
       }
       async function checkinWrite() {
         var p = new ethers.BrowserProvider(window.ethereum);
@@ -2071,17 +2106,28 @@
       async function fetchMintInfo() {
         if (readBlockReason()) return;
         try {
-          var card = cardRead();
-          cardTotalMinted = Number(await card.totalMinted());
-          cardFreeMinted = Number(await card.freeMinted());
-          cardPaidMinted = Number(await card.paidMinted());
-          if (walletAddr) {
-            cardHasMinted = await card.hasMinted(walletAddr);
-            cardHasPaidMinted = await card.hasPaidMinted(walletAddr);
-          } else {
-            cardHasMinted = null;
-            cardHasPaidMinted = null;
-          }
+          // One rpcRead for the whole snapshot: if the endpoint flakes
+          // mid-way, the full set of counters is re-read on the next
+          // endpoint instead of half-updating the hero line.
+          var snap = await rpcRead(async function (p) {
+            var card = cardRead(p);
+            var s = {
+              total: Number(await card.totalMinted()),
+              free: Number(await card.freeMinted()),
+              paid: Number(await card.paidMinted()),
+              has: null, hasPaid: null
+            };
+            if (walletAddr) {
+              s.has = await card.hasMinted(walletAddr);
+              s.hasPaid = await card.hasPaidMinted(walletAddr);
+            }
+            return s;
+          });
+          cardTotalMinted = snap.total;
+          cardFreeMinted = snap.free;
+          cardPaidMinted = snap.paid;
+          cardHasMinted = snap.has;
+          cardHasPaidMinted = snap.hasPaid;
           renderCardModal();
         } catch (e) {
           setMintStatus("Couldn't reach the card contract on Sepolia: " + errText(e), true);
@@ -2118,55 +2164,71 @@
 
       /* Load the connected wallet's card: the stored tokenId first
          (verified with ownerOf), then discovery via Transfer events —
-         the contract is plain ERC-721 (no tokenOfOwnerByIndex). */
+         the contract is plain ERC-721 (no tokenOfOwnerByIndex). The
+         whole load runs inside rpcRead, so a failing endpoint restarts
+         it on the next one; and event discovery starts at the v3 card
+         contract's deployment block (CARD_DEPLOY_BLOCK) — an unbounded
+         scan from block 0 spans ~12M blocks, which public RPCs reject
+         outright. */
       async function loadMyCard() {
         if (cardLoading) return;
         if (!walletAddr) return;
         if (readBlockReason()) return;
         cardLoading = true;
         try {
-          var card = cardRead();
           var tracked = loadCardTracked(walletAddr);
-          var tokenId = tracked.tokenId;
-          if (tokenId != null) {
-            var owner = null;
-            try { owner = await card.ownerOf(tokenId); } catch (e) { owner = null; }
-            if (!owner || owner.toLowerCase() !== walletAddr.toLowerCase()) tokenId = null;   // no longer owned — clear & re-discover
-          }
-          if (tokenId == null) {
-            var events = await card.queryFilter(card.filters.Transfer(null, walletAddr));
-            for (var i = events.length - 1; i >= 0; i--) {
-              var cand = events[i].args.tokenId;
-              try {
-                var o = await card.ownerOf(cand);
-                if (o.toLowerCase() === walletAddr.toLowerCase()) { tokenId = cand; break; }
-              } catch (e2) {}
+          var found = await rpcRead(async function (p) {
+            var card = cardRead(p);
+            var tokenId = tracked.tokenId;
+            if (tokenId != null) {
+              var owner = await card.ownerOf(tokenId).catch(function () { return null; });
+              if (!owner || owner.toLowerCase() !== walletAddr.toLowerCase()) tokenId = null;   // no longer owned — clear & re-discover
             }
-          }
-          if (tokenId == null) { resetCardState(); renderCardModal(); return; }
-          var c = await card.getCard(tokenId);
+            if (tokenId == null) {
+              var events = await card.queryFilter(card.filters.Transfer(null, walletAddr), CARD_DEPLOY_BLOCK, "latest");
+              for (var i = events.length - 1; i >= 0; i--) {
+                var cand = events[i].args.tokenId;
+                try {
+                  var o = await card.ownerOf(cand);
+                  if (o.toLowerCase() === walletAddr.toLowerCase()) { tokenId = cand; break; }
+                } catch (e2) {}
+              }
+            }
+            if (tokenId == null) return null;
+            var c = await card.getCard(tokenId);
+            var out = {
+              tokenId: Number(tokenId),
+              speed: Number(c.speed), lives: Number(c.lives), luck: Number(c.luck),
+              rarity: Number(c.rarity), level: Number(c.level), xp: Number(c.xp),
+              image: null, name: ""
+            };
+            // Artwork: read tokenURI on-chain, fetch the metadata JSON
+            // it points to, and take its image (a data URI for SQMC
+            // cards). A metadata failure must never break the card
+            // display itself.
+            try {
+              var uri = await card.tokenURI(tokenId);
+              var meta = await fetchCardMetadata(uri);
+              if (meta) {
+                if (meta.name) out.name = String(meta.name);
+                if (meta.image) out.image = normalizeImageUrl(String(meta.image));
+              }
+            } catch (eMeta) {}
+            return out;
+          });
+          if (found == null) { resetCardState(); renderCardModal(); return; }
           cardState.owned = true;
-          cardState.tokenId = Number(tokenId);
-          cardState.speed = Number(c.speed);
-          cardState.lives = Number(c.lives);
-          cardState.luck = Number(c.luck);
-          cardState.rarity = Number(c.rarity);
-          cardState.onChainLevel = Number(c.level);
-          cardState.onChainXp = Number(c.xp);
+          cardState.tokenId = found.tokenId;
+          cardState.speed = found.speed;
+          cardState.lives = found.lives;
+          cardState.luck = found.luck;
+          cardState.rarity = found.rarity;
+          cardState.onChainLevel = found.level;
+          cardState.onChainXp = found.xp;
           cardState.level = tracked.level;
           cardState.xp = tracked.xp;
-          // Artwork: read tokenURI on-chain, fetch the metadata JSON it
-          // points to, and take its image (a data URI for SQMC cards).
-          // A metadata failure must never break the card display itself.
-          cardState.image = null; cardState.name = "";
-          try {
-            var uri = await card.tokenURI(tokenId);
-            var meta = await fetchCardMetadata(uri);
-            if (meta) {
-              if (meta.name) cardState.name = String(meta.name);
-              if (meta.image) cardState.image = normalizeImageUrl(String(meta.image));
-            }
-          } catch (eMeta) {}
+          cardState.image = found.image;
+          cardState.name = found.name;
           saveCardTracked(walletAddr, { tokenId: cardState.tokenId, level: cardState.level, xp: cardState.xp });
           cardHasMinted = true;
           renderCardModal();
@@ -2283,11 +2345,15 @@
         if (!cardState.owned) { setCardStatus("No card to sync yet — mint your free card first.", true); return; }
         if (!walletAddr || !walletChainOk) { setCardStatus("Connect your wallet on Sepolia to sync.", true); return; }
         try {
-          var read = cardRead();
-          var ownerAddr = await read.owner();
-          var gameAddr = await read.gameAddress();
-          var tokenOwner = null;
-          try { tokenOwner = await read.ownerOf(cardState.tokenId); } catch (eO) { tokenOwner = null; }
+          var ids = await rpcRead(async function (p) {
+            var read = cardRead(p);
+            var o = await read.owner();
+            var g = await read.gameAddress();
+            var t = null;
+            try { t = await read.ownerOf(cardState.tokenId); } catch (eO) { t = null; }
+            return { owner: o, game: g, tokenOwner: t };
+          });
+          var ownerAddr = ids.owner, gameAddr = ids.game, tokenOwner = ids.tokenOwner;
           var me = walletAddr.toLowerCase();
           var warn = el("syncWarn");
           // v3 rule: syncLevel is allowed for the contract owner, the
@@ -2325,7 +2391,7 @@
         catch (e) { setMarketStatus("Enter a valid price in Sepolia ETH (e.g. 0.01).", true); return; }
         if (priceWei <= 0n) { setMarketStatus("Price must be more than 0 Sepolia ETH.", true); return; }
         try {
-          var approved = await cardRead().isApprovedForAll(walletAddr, MARKET_ADDRESS);
+          var approved = await rpcRead(async function (p) { return await cardRead(p).isApprovedForAll(walletAddr, MARKET_ADDRESS); });
           if (!approved) {
             setMarketStatus("Approving market… confirm setApprovalForAll in your wallet.");
             var cardW = await cardWrite();
@@ -2348,7 +2414,7 @@
         var tid = parseInt(el("buyTokenId").value.trim(), 10);
         if (isNaN(tid) || tid < 0) { setMarketStatus("Enter a token ID to check.", true); return; }
         try {
-          var l = await marketRead().getListing(tid);
+          var l = await rpcRead(async function (p) { return await marketRead(p).getListing(tid); });
           marketListing = { tokenId: tid, seller: l.seller, price: l.price, active: l.active };
           var info = el("listingInfo");
           info.hidden = false;
@@ -2422,6 +2488,7 @@
          All reads go through the public Sepolia RPC provider — no
          wallet needed to browse; buying uses the wallet signer. */
       var MARKET_DEPLOY_BLOCK = 12096126;   // v3 market deployment block (Sepolia)
+      var CARD_DEPLOY_BLOCK = 12096125;     // v3 card deployment block (Sepolia)
       var mktListings = [];        // enriched active listings, tokenId ascending
       var mktGridLoading = false, mktFeedLoading = false;
       var mktBlockTimes = {};      // blockNumber -> unix seconds (cache)
@@ -2445,38 +2512,46 @@
         setMktStatus("Loading listings from Sepolia…");
         el("mktEmpty").hidden = true;
         try {
-          var card = cardRead(), market = marketRead();
-          var total = Number(await card.totalMinted());
-          var ids = [];
-          for (var i = 1; i <= total; i++) ids.push(i);
-          var raw = await Promise.all(ids.map(async function (id) {
-            try {
-              var l = await market.getListing(id);
-              return { tokenId: id, seller: l.seller, price: l.price, active: !!l.active };
-            } catch (e) { return null; }
-          }));
-          var active = raw.filter(function (l) { return l && l.active; });
-          mktListings = await Promise.all(active.map(async function (l) {
-            var out = { tokenId: l.tokenId, seller: l.seller, price: l.price,
-                        speed: null, lives: null, luck: null, rarity: 0, image: null, name: "" };
-            try {
-              var c = await card.getCard(l.tokenId);
-              out.speed = Number(c.speed); out.lives = Number(c.lives);
-              out.luck = Number(c.luck); out.rarity = Number(c.rarity);
-            } catch (e) {}
-            try {
-              var uri = await card.tokenURI(l.tokenId);
-              var meta = await fetchCardMetadata(uri);
-              if (meta) {
-                if (meta.name) out.name = String(meta.name);
-                if (meta.image) out.image = normalizeImageUrl(String(meta.image));
-              }
-            } catch (e) {}
-            return out;
-          }));
+          // Single endpoint per attempt (see rpcRead): totalMinted is
+          // the gate — if it fails, the whole scan retries on the next
+          // endpoint instead of erroring the grid. A getListing that
+          // fails on an otherwise healthy scan still skips that token.
+          var scan = await rpcRead(async function (p) {
+            var card = cardRead(p), market = marketRead(p);
+            var total = Number(await card.totalMinted());
+            var ids = [];
+            for (var i = 1; i <= total; i++) ids.push(i);
+            var raw = await Promise.all(ids.map(async function (id) {
+              try {
+                var l = await market.getListing(id);
+                return { tokenId: id, seller: l.seller, price: l.price, active: !!l.active };
+              } catch (e) { return null; }
+            }));
+            var active = raw.filter(function (l) { return l && l.active; });
+            var enriched = await Promise.all(active.map(async function (l) {
+              var out = { tokenId: l.tokenId, seller: l.seller, price: l.price,
+                          speed: null, lives: null, luck: null, rarity: 0, image: null, name: "" };
+              try {
+                var c = await card.getCard(l.tokenId);
+                out.speed = Number(c.speed); out.lives = Number(c.lives);
+                out.luck = Number(c.luck); out.rarity = Number(c.rarity);
+              } catch (e) {}
+              try {
+                var uri = await card.tokenURI(l.tokenId);
+                var meta = await fetchCardMetadata(uri);
+                if (meta) {
+                  if (meta.name) out.name = String(meta.name);
+                  if (meta.image) out.image = normalizeImageUrl(String(meta.image));
+                }
+              } catch (e) {}
+              return out;
+            }));
+            return { total: total, listings: enriched };
+          });
+          mktListings = scan.listings;
           renderMarketGrid();
           setMktStatus(mktListings.length
-            ? mktListings.length + (mktListings.length === 1 ? " card" : " cards") + " listed for sale · " + fmtInt(total) + " minted"
+            ? mktListings.length + (mktListings.length === 1 ? " card" : " cards") + " listed for sale · " + fmtInt(scan.total) + " minted"
             : "");
         } catch (e) {
           setMktStatus("Couldn't load the marketplace from Sepolia: " + errText(e), true);
@@ -2601,52 +2676,59 @@
         loading.textContent = "Loading activity…";
         feed.appendChild(loading);
         try {
-          var provider = sepoliaReadProvider();
           var iface = new ethers.Interface(MARKET_ABI);
           var topic0s = [
             iface.getEvent("Listed").topicHash,
             iface.getEvent("Bought").topicHash,
             iface.getEvent("Cancelled").topicHash
           ];
-          var latest = await provider.getBlockNumber();
-          var logs = [], end = latest, CHUNK = 20000;
-          while (end >= MARKET_DEPLOY_BLOCK && logs.length < 20) {
-            var start = Math.max(MARKET_DEPLOY_BLOCK, end - CHUNK + 1);
-            var part = await provider.getLogs({
-              address: MARKET_ADDRESS,
-              topics: [topic0s],
-              fromBlock: start,
-              toBlock: end
+          // The whole scan runs on ONE endpoint via rpcRead and retries
+          // on the next endpoint if any getLogs chunk fails — under the
+          // old FallbackProvider this scan was the "could not coalesce
+          // error" failure. Chunks are 10,000 blocks: several public
+          // endpoints cap eth_getLogs ranges there.
+          var events = await rpcRead(async function (provider) {
+            var latest = await provider.getBlockNumber();
+            var logs = [], end = latest, CHUNK = 10000;
+            while (end >= MARKET_DEPLOY_BLOCK && logs.length < 20) {
+              var start = Math.max(MARKET_DEPLOY_BLOCK, end - CHUNK + 1);
+              var part = await provider.getLogs({
+                address: MARKET_ADDRESS,
+                topics: [topic0s],
+                fromBlock: start,
+                toBlock: end
+              });
+              logs = part.concat(logs);
+              end = start - 1;
+            }
+            logs.sort(function (a, b) {
+              return (b.blockNumber - a.blockNumber) || (b.index - a.index);
             });
-            logs = part.concat(logs);
-            end = start - 1;
-          }
-          logs.sort(function (a, b) {
-            return (b.blockNumber - a.blockNumber) || (b.index - a.index);
+            var evs = [];
+            for (var i = 0; i < logs.length && evs.length < 20; i++) {
+              var parsed = null;
+              try { parsed = iface.parseLog({ topics: logs[i].topics, data: logs[i].data }); } catch (e) {}
+              if (!parsed) continue;
+              evs.push({
+                type: parsed.name, blockNumber: logs[i].blockNumber, txHash: logs[i].transactionHash,
+                tokenId: Number(parsed.args.tokenId),
+                seller: parsed.args.seller,
+                buyer: parsed.name === "Bought" ? parsed.args.buyer : null,
+                price: parsed.name === "Cancelled" ? null : parsed.args.price
+              });
+            }
+            // Block timestamps for the time column (cached, ≤20 lookups).
+            var need = {};
+            evs.forEach(function (ev) { if (mktBlockTimes[ev.blockNumber] == null) need[ev.blockNumber] = true; });
+            var nums = Object.keys(need).map(Number);
+            await Promise.all(nums.map(async function (n) {
+              try {
+                var blk = await provider.getBlock(n);
+                if (blk) mktBlockTimes[n] = Number(blk.timestamp);
+              } catch (e) {}
+            }));
+            return evs;
           });
-          var events = [];
-          for (var i = 0; i < logs.length && events.length < 20; i++) {
-            var parsed = null;
-            try { parsed = iface.parseLog({ topics: logs[i].topics, data: logs[i].data }); } catch (e) {}
-            if (!parsed) continue;
-            events.push({
-              type: parsed.name, blockNumber: logs[i].blockNumber, txHash: logs[i].transactionHash,
-              tokenId: Number(parsed.args.tokenId),
-              seller: parsed.args.seller,
-              buyer: parsed.name === "Bought" ? parsed.args.buyer : null,
-              price: parsed.name === "Cancelled" ? null : parsed.args.price
-            });
-          }
-          // Block timestamps for the time column (cached, ≤20 lookups).
-          var need = {};
-          events.forEach(function (ev) { if (mktBlockTimes[ev.blockNumber] == null) need[ev.blockNumber] = true; });
-          var nums = Object.keys(need).map(Number);
-          await Promise.all(nums.map(async function (n) {
-            try {
-              var blk = await provider.getBlock(n);
-              if (blk) mktBlockTimes[n] = Number(blk.timestamp);
-            } catch (e) {}
-          }));
           renderMarketFeed(events);
         } catch (e) {
           feed.innerHTML = "";
@@ -2760,11 +2842,13 @@
         if (typeof window.ethers === "undefined") return;
         ciChainLoading = true;
         try {
-          var rd = checkinRead();
-          var res = await Promise.all([rd.getCheckin(walletAddr), rd.canCheckIn(walletAddr)]);
+          var res = await rpcRead(async function (p) {
+            var rd = checkinRead(p);
+            return await Promise.all([rd.getCheckin(walletAddr), rd.canCheckIn(walletAddr)]);
+          });
           ciChain = { lastDay: Number(res[0].lastDay), streak: Number(res[0].currentStreak), canCheckIn: !!res[1] };
         } catch (e) {
-          ciChain = null;   // RPC unreachable — fall back to the local record
+          ciChain = null;   // every RPC unreachable — fall back to the local record
         } finally {
           ciChainLoading = false;
           renderCheckin();
@@ -2814,7 +2898,7 @@
         var note = el("heroLock");
         if (note) {
           note.hidden = !locked;
-          if (locked) note.textContent = "Nyawa habis — out of lives for today. Squeektoshi is resting: play unlocks again at the daily reset, tomorrow at 07:00 WIB.";
+          if (locked) note.textContent = "Out of lives for today. Squeektoshi is resting; play unlocks again at the daily reset, tomorrow at 07:00 WIB.";
         }
         var pb = el("playBtn");
         if (pb) {
@@ -2824,7 +2908,7 @@
       }
       function showLockout() {
         state = "over";
-        showOverlay("Nyawa habis — out of lives",
+        showOverlay("Out of lives",
           "You've used your one life for today. Squeektoshi needs to rest — play unlocks again at the daily reset, <strong>tomorrow at 07:00 WIB</strong>. Your best score is safe until then.",
           "Back tomorrow", false, false);
         el("restartBtn").disabled = true;
@@ -2932,10 +3016,9 @@
         try {
           btn.disabled = true;
           btn.textContent = "Checking in…";
-          var rd = checkinRead();
-          var can = await rd.canCheckIn(walletAddr);
+          var can = await rpcRead(async function (p) { return await checkinRead(p).canCheckIn(walletAddr); });
           if (!can) {
-            var cur0 = await rd.getCheckin(walletAddr);
+            var cur0 = await rpcRead(async function (p) { return await checkinRead(p).getCheckin(walletAddr); });
             ciChain = { lastDay: Number(cur0.lastDay), streak: Number(cur0.currentStreak), canCheckIn: false };
             markLocalChecked(ciChain.streak);
             setWalletMsg("Already checked in on-chain today — streak: " + ciChain.streak + (ciChain.streak === 1 ? " day" : " days") + ".");
@@ -2957,7 +3040,7 @@
             }
           } catch (eRc) {}
           if (newStreak == null) {
-            var cur1 = await rd.getCheckin(walletAddr);
+            var cur1 = await rpcRead(async function (p) { return await checkinRead(p).getCheckin(walletAddr); });
             newStreak = Number(cur1.currentStreak);
           }
           ciChain = { lastDay: utcDayNumber(), streak: newStreak, canCheckIn: false };
