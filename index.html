@@ -131,6 +131,8 @@
       .pbtn.dark:hover { background: #2e1854; }
       .pbtn.mint { background: linear-gradient(180deg, #63ec96, var(--green) 55%, #28a85c); color: #07280f; }
       .pbtn.mint:hover { background: linear-gradient(180deg, #7df2a8, #4fe184 55%, #31ba68); }
+      .pbtn.paid { background: linear-gradient(180deg, #8fe3f7, #35c4e8 55%, #1d9bc4); color: #062a38; }
+      .pbtn.paid:hover { background: linear-gradient(180deg, #a8ecfa, #4fd2f2 55%, #25abd6); }
       .hero-mint-status {
         margin: -4px auto 22px; max-width: 560px; font-size: 14.5px; font-weight: 600;
         color: var(--cream); text-shadow: 0 2px 10px rgba(20, 5, 40, .65);
@@ -449,9 +451,10 @@
           <div class="hero-cta">
             <button class="pbtn gold" id="playBtn" type="button">▶ Play</button>
             <button class="pbtn mint" id="heroMintBtn" type="button">Free Mint</button>
+            <button class="pbtn paid" id="heroPaidMintBtn" type="button" hidden>Mint (0.5 ETH)</button>
             <button class="pbtn dark" id="howBtn" type="button">How to play</button>
           </div>
-          <p class="hero-mint-status" id="heroMintStatus" role="status">Loading free-mint status…</p>
+          <p class="hero-mint-status" id="heroMintStatus" role="status">Loading mint status…</p>
           <p class="hero-lock" id="heroLock" role="status" hidden></p>
           <div class="hero-links">
             <button class="mbtn" id="liveBtn" type="button">Live feed</button>
@@ -689,12 +692,12 @@
       <div class="mbox">
         <button class="mclose" type="button" data-close aria-label="Close">✕</button>
         <h2>My Card</h2>
-        <p class="msub">Squeek Maze Cards (SQMC) — one free Sepolia NFT per wallet. Your card's Speed and Luck change how the maze plays, and clearing mazes earns it XP. Lives are the same for everyone — exactly 1 per run, card or no card — so levels climb slowly. Contracts are live on Sepolia: <a href="https://sepolia.etherscan.io/address/0x5381724fE3192595bE2394F90dd10F28bBFA7495" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">SqueekMazeCard v2 ↗</a> · <a href="https://sepolia.etherscan.io/address/0x9061A6C5C88Efe440DCF75E13582Eb4FB2ef6602" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">Market v2 ↗</a>. The game plays exactly the same with no card and no wallet.</p>
+        <p class="msub">Squeek Maze Cards (SQMC) — Sepolia NFTs from a total supply of 11,111: 10,000 free mints (1 per wallet) plus 1,111 paid mints at 0.5 Sepolia ETH (1 per wallet), so one wallet can hold a free card and a paid card. Your card's Speed and Luck change how the maze plays, and clearing mazes earns it XP. Lives are the same for everyone — exactly 1 per run, card or no card — so levels climb slowly. Contracts are live on Sepolia: <a href="https://sepolia.etherscan.io/address/0x8f6a173f340BE3004DFD735ECe43d22751513DB0" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">SqueekMazeCard v3 ↗</a> · <a href="https://sepolia.etherscan.io/address/0x54A27814cf7EBA18a3030ff32d14671016f4E10b" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">Market v3 ↗</a>. The game plays exactly the same with no card and no wallet.</p>
         <p class="card-msg" id="cardStatus" role="status"></p>
 
         <div class="card-sec" id="noCardSec" style="border-top:0; padding-top:0; margin-top:0">
           <p class="kicker">Your card</p>
-          <p id="noCardMsg">You don't have a Squeek Maze Card yet. Mint yours free from the <strong>Free Mint</strong> button on the home page — 1 per wallet, free on Sepolia (gas only). Once minted, your card and its stats show up here.</p>
+          <p id="noCardMsg">You don't have a Squeek Maze Card yet. Mint yours from the home page — <strong>Free Mint</strong> (1 per wallet, free on Sepolia, gas only), or the paid <strong>Mint (0.5 ETH)</strong> while paid supply lasts (also 1 per wallet). Once minted, your card and its stats show up here.</p>
         </div>
 
         <div class="card-sec" id="ownedSec" hidden>
@@ -718,7 +721,7 @@
           <p class="kicker">XP &amp; Sync Level</p>
           <p id="xpInfo">Clear a maze with a card connected to earn <strong>+50 XP</strong> per maze, tracked in this browser per wallet.</p>
           <p>What Sync is for: a card's level only ever rises by playing — <strong>+50 XP per cleared maze</strong> — and with just <strong>1 life per day</strong> (reset 07:00 WIB) it rises slowly by design. Sync Level writes the level and XP you have earned onto your card on Sepolia, so the progress is stored on the NFT itself instead of only in this browser.</p>
-          <p class="sync-note">On the v2 card contract, the owner of a card can sync their own card: syncLevel allows the card's owner (you, for your own card), the contract owner, or the game wallet. Syncing a card you don't own reverts — your XP stays saved in the game either way.</p>
+          <p class="sync-note">On the v3 card contract, the owner of a card can sync their own card: syncLevel allows the card's owner (you, for your own card), the contract owner, or the game wallet. Syncing a card you don't own reverts — your XP stays saved in the game either way.</p>
           <p class="card-msg err" id="syncWarn" hidden></p>
           <div class="card-row">
             <button class="btn" id="syncBtn" type="button" disabled>Sync Level</button>
@@ -753,7 +756,7 @@
       <div class="mbox wide">
         <button class="mclose" type="button" data-close aria-label="Close">✕</button>
         <h2>Marketplace</h2>
-        <p class="msub">Every Squeek Maze Card listed for sale on the <a href="https://sepolia.etherscan.io/address/0x9061A6C5C88Efe440DCF75E13582Eb4FB2ef6602" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">v2 market contract ↗</a>, read live from Sepolia. Prices are in Sepolia testnet ETH; buying transfers the card to your wallet at the exact listed price. To sell your own card, use “List for sale” in <strong>My Card</strong>.</p>
+        <p class="msub">Every Squeek Maze Card listed for sale on the <a href="https://sepolia.etherscan.io/address/0x54A27814cf7EBA18a3030ff32d14671016f4E10b" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">v3 market contract ↗</a>, read live from Sepolia. Prices are in Sepolia testnet ETH; buying transfers the card to your wallet at the exact listed price. To sell your own card, use “List for sale” in <strong>My Card</strong>.</p>
         <div class="mkt-head">
           <p class="kicker">Cards for sale</p>
           <span style="flex:1"></span>
@@ -1840,21 +1843,25 @@
       var SEPOLIA_HEX = "0xaa36a7";   // 11155111
       var walletAddr = null, walletChainOk = false;
 
-      // ===== SQUEEK MAZE CARDS v2 (Sepolia NFT) =====
+      // ===== SQUEEK MAZE CARDS v3 (Sepolia NFT) =====
       // Deployed on Sepolia (chainId 11155111) and live:
-      // SqueekMazeCardV2 (SQMC) — https://sepolia.etherscan.io/address/0x5381724fE3192595bE2394F90dd10F28bBFA7495
-      // SqueekMazeMarket v2 — https://sepolia.etherscan.io/address/0x9061A6C5C88Efe440DCF75E13582Eb4FB2ef6602
-      // v2 fixes sync for players: syncLevel allows the contract owner,
-      // the gameAddress, OR the owner of that specific tokenId — so a
-      // minter can sync their own card. Card baseURI is
-      // https://fadliferdian28.github.io/squeek-dash/cards-v2/ (tokenURI
-      // returns that path, and metadata fetches follow it).
+      // SqueekMazeCardV3 (SQMC) — https://sepolia.etherscan.io/address/0x8f6a173f340BE3004DFD735ECe43d22751513DB0
+      // SqueekMazeMarket v3 — https://sepolia.etherscan.io/address/0x54A27814cf7EBA18a3030ff32d14671016f4E10b
+      // v3 supply is 11,111: 10,000 free mints (mint(), 1 per wallet) plus
+      // 1,111 paid mints (mintPaid(), 1 per wallet) at exactly 0.5 Sepolia
+      // ETH. A wallet can hold one free card AND one paid card. syncLevel
+      // still allows the contract owner, the gameAddress, OR the owner of
+      // that specific tokenId — so a minter can sync their own card. Card
+      // baseURI is https://fadliferdian28.github.io/squeek-dash/cards-v3/
+      // (tokenURI returns that path, and metadata fetches follow it).
       // Minting and the marketplace are LIVE. The zero-address guard in
       // cardBlockReason() stays as a safety net: if an address were ever
       // reset to 0x000...0, the card/market features would go inert
       // instead of calling the zero address.
-      const CARD_ADDRESS = "0x5381724fE3192595bE2394F90dd10F28bBFA7495";
-      const MARKET_ADDRESS = "0x9061A6C5C88Efe440DCF75E13582Eb4FB2ef6602";
+      const CARD_ADDRESS = "0x8f6a173f340BE3004DFD735ECe43d22751513DB0";
+      const MARKET_ADDRESS = "0x54A27814cf7EBA18a3030ff32d14671016f4E10b";
+      const FREE_SUPPLY = 10000, PAID_SUPPLY = 1111, TOTAL_SUPPLY = 11111;
+      const PAID_PRICE_WEI = "500000000000000000";   // mintPaid value: exactly 0.5 Sepolia ETH
       // DailyCheckin — deployed on Sepolia, permissionless, no owner:
       // https://sepolia.etherscan.io/address/0x5d222D54c7605fF68eF555456C51441369421ECF
       const CHECKIN_ADDRESS = "0x5d222D54c7605fF68eF555456C51441369421ECF";
@@ -1868,12 +1875,13 @@
       // contract: block.timestamp / 86400). 00:00 UTC == 07:00 WIB, so
       // this number rolls over exactly at the 07:00 WIB daily reset.
       function utcDayNumber() { return Math.floor(Date.now() / 86400000); }
-      const CARD_ABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721IncorrectOwner","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721InsufficientApproval","type":"error"},{"inputs":[{"internalType":"address","name":"approver","type":"address"}],"name":"ERC721InvalidApprover","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"}],"name":"ERC721InvalidOperator","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721InvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"receiver","type":"address"}],"name":"ERC721InvalidReceiver","type":"error"},{"inputs":[{"internalType":"address","name":"sender","type":"address"}],"name":"ERC721InvalidSender","type":"error"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721NonexistentToken","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"OwnableInvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"OwnableUnauthorizedAccount","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":false,"internalType":"bool","name":"approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"newBaseURI","type":"string"}],"name":"BaseURIUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"address","name":"minter","type":"address"},{"indexed":false,"internalType":"uint256","name":"speed","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"lives","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"luck","type":"uint256"},{"indexed":false,"internalType":"enum SqueekMazeCard.Rarity","name":"rarity","type":"uint8"}],"name":"CardMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldAddress","type":"address"},{"indexed":true,"internalType":"address","name":"newAddress","type":"address"}],"name":"GameAddressUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"level","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"xp","type":"uint256"}],"name":"LevelSynced","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newLevel","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newXp","type":"uint256"}],"name":"XpAdded","type":"event"},{"inputs":[],"name":"EPIC_MIN_TOTAL","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"LEGENDARY_MIN_TOTAL","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MAX_SUPPLY","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"RARE_MIN_TOTAL","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"addXp","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"gameAddress","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"","type":"address"}],"name":"getCard","outputs":[{"internalType":"uint256","name":"speed","type":"uint256"},{"internalType":"uint256","name":"lives","type":"uint256"},{"internalType":"uint256","name":"luck","type":"uint256"},{"internalType":"enum SqueekMazeCard.Rarity","name":"rarity","type":"uint8"},{"internalType":"uint256","name":"level","type":"uint256"},{"internalType":"uint256","name":"xp","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"hasMinted","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"mint","outputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"bool","name":"approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"newBaseURI","type":"string"}],"name":"setBaseURI","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newGameAddress","type":"address"}],"name":"setGameAddress","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"level","type":"uint256"},{"internalType":"uint256","name":"xp","type":"uint256"}],"name":"syncLevel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalMinted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"transferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}];
+      const CARD_ABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721IncorrectOwner","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721InsufficientApproval","type":"error"},{"inputs":[{"internalType":"address","name":"approver","type":"address"}],"name":"ERC721InvalidApprover","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"}],"name":"ERC721InvalidOperator","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721InvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"receiver","type":"address"}],"name":"ERC721InvalidReceiver","type":"error"},{"inputs":[{"internalType":"address","name":"sender","type":"address"}],"name":"ERC721InvalidSender","type":"error"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721NonexistentToken","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"OwnableInvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"OwnableUnauthorizedAccount","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":false,"internalType":"bool","name":"approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"newBaseURI","type":"string"}],"name":"BaseURIUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"address","name":"minter","type":"address"},{"indexed":false,"internalType":"uint256","name":"speed","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"lives","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"luck","type":"uint256"},{"indexed":false,"internalType":"enum SqueekMazeCardV3.Rarity","name":"rarity","type":"uint8"}],"name":"CardMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldAddress","type":"address"},{"indexed":true,"internalType":"address","name":"newAddress","type":"address"}],"name":"GameAddressUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"level","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"xp","type":"uint256"}],"name":"LevelSynced","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"address","name":"buyer","type":"address"},{"indexed":false,"internalType":"uint256","name":"price","type":"uint256"}],"name":"PaidMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newLevel","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newXp","type":"uint256"}],"name":"XpAdded","type":"event"},{"inputs":[],"name":"EPIC_MIN_TOTAL","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"FREE_SUPPLY","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"LEGENDARY_MIN_TOTAL","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MAX_SUPPLY","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PAID_PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PAID_SUPPLY","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"RARE_MIN_TOTAL","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"addXp","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"freeMinted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"gameAddress","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"getCard","outputs":[{"internalType":"uint256","name":"speed","type":"uint256"},{"internalType":"uint256","name":"lives","type":"uint256"},{"internalType":"uint256","name":"luck","type":"uint256"},{"internalType":"enum SqueekMazeCardV3.Rarity","name":"rarity","type":"uint8"},{"internalType":"uint256","name":"level","type":"uint256"},{"internalType":"uint256","name":"xp","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"hasMinted","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"hasPaidMinted","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"mint","outputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"mintPaid","outputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"paidMinted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"bool","name":"approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"newBaseURI","type":"string"}],"name":"setBaseURI","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newGameAddress","type":"address"}],"name":"setGameAddress","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"level","type":"uint256"},{"internalType":"uint256","name":"xp","type":"uint256"}],"name":"syncLevel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalMinted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"transferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}];
       const MARKET_ABI = [{"inputs":[{"internalType":"address","name":"nftAddress","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"ReentrancyGuardReentrantCall","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"address","name":"seller","type":"address"},{"indexed":true,"internalType":"address","name":"buyer","type":"address"},{"indexed":false,"internalType":"uint256","name":"price","type":"uint256"}],"name":"Bought","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"address","name":"seller","type":"address"}],"name":"Cancelled","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"address","name":"seller","type":"address"},{"indexed":false,"internalType":"uint256","name":"price","type":"uint256"}],"name":"Listed","type":"event"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"buy","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"cancel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"getListing","outputs":[{"internalType":"address","name":"seller","type":"address"},{"internalType":"uint256","name":"price","type":"uint256"},{"internalType":"bool","name":"active","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"price","type":"uint256"}],"name":"list","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"nft","outputs":[{"internalType":"contract IERC721","name":"","type":"address"}],"stateMutability":"view","type":"function"}];
       var RARITY_NAMES = ["Common", "Rare", "Epic", "Legendary"];
       var ZERO_ADDR = "0x0000000000000000000000000000000000000000";
       var cardState = {owned:false, tokenId:null, speed:0, lives:0, luck:0, rarity:0, level:1, xp:0, onChainLevel:1, onChainXp:0, image:null, name:""};
-      var cardTotalMinted = null, cardHasMinted = null, cardLoading = false, cardBlockedMsg = null;
+      var cardTotalMinted = null, cardFreeMinted = null, cardPaidMinted = null;
+      var cardHasMinted = null, cardHasPaidMinted = null, cardLoading = false, cardBlockedMsg = null;
       var marketListing = null;   // last checked listing: {tokenId, seller, price (BigInt wei), active}
 
       // Card Speed mapping: speedMult = 0.9 + (speed-10)/90*0.6 (Speed 10 → 0.9x, Speed 100 → 1.5x).
@@ -1924,17 +1932,39 @@
         var h = el("heroMintStatus");
         if (!h) return;
         var txt = "";
-        if (cardTotalMinted != null) txt += "Cards minted: " + fmtInt(cardTotalMinted) + " / 10,000 · ";
-        if (!window.ethereum) txt += "Connect a wallet on Sepolia to mint your free card.";
-        else if (!walletAddr) txt += "Connect wallet (Sepolia) to mint your free card.";
-        else if (!walletChainOk) txt += "Wallet connected — switch to Sepolia to mint your free card.";
-        else if (cardHasMinted) txt += "Already minted — your card is in “My Card”.";
+        if (cardTotalMinted != null) {
+          txt += fmtInt(cardTotalMinted) + " / " + fmtInt(TOTAL_SUPPLY) + " minted";
+          if (cardFreeMinted != null && cardPaidMinted != null) {
+            txt += " — " + fmtInt(Math.max(0, FREE_SUPPLY - cardFreeMinted)) + " free left, " +
+              fmtInt(Math.max(0, PAID_SUPPLY - cardPaidMinted)) + " paid left at 0.5 ETH";
+          }
+          txt += " · ";
+        }
+        var freeSoldOut = cardFreeMinted != null && cardFreeMinted >= FREE_SUPPLY;
+        var paidSoldOut = cardPaidMinted != null && cardPaidMinted >= PAID_SUPPLY;
+        if (!window.ethereum) txt += "Connect a wallet on Sepolia to mint your card.";
+        else if (!walletAddr) txt += "Connect wallet (Sepolia) to mint your card.";
+        else if (!walletChainOk) txt += "Wallet connected — switch to Sepolia to mint.";
+        else if (freeSoldOut && !cardHasMinted) txt += paidSoldOut
+          ? "Free mint sold out, and the paid mint is sold out too."
+          : "Free mint sold out — the paid mint (0.5 ETH) is still open.";
+        else if (cardHasMinted) txt += cardHasPaidMinted
+          ? "Free and paid cards both minted — see them in “My Card”."
+          : "Free card minted — your card is in “My Card”.";
         else if (cardHasMinted === false) txt += "Your free card is waiting — 1 per wallet, gas only.";
         else txt += "Checking your mint status…";
         h.textContent = txt;
         h.className = "hero-mint-status";
         var b = el("heroMintBtn");
-        if (b) b.textContent = cardHasMinted ? "View My Card" : "Free Mint";
+        if (b) {
+          if (cardHasMinted) b.textContent = "View My Card";
+          else if (freeSoldOut) b.textContent = "Free Mint · Sold out";
+          else b.textContent = "Free Mint";
+        }
+        // Paid mint shows only while this wallet still has its paid mint
+        // available (hasPaidMinted false) and paid supply remains.
+        var pb = el("heroPaidMintBtn");
+        if (pb) pb.hidden = !(cardHasPaidMinted === false && !paidSoldOut);
       }
       var SEPOLIA_RPC_URLS = [
         "https://ethereum-sepolia-rpc.publicnode.com",
@@ -2043,8 +2073,15 @@
         try {
           var card = cardRead();
           cardTotalMinted = Number(await card.totalMinted());
-          if (walletAddr) cardHasMinted = await card.hasMinted(walletAddr);
-          else cardHasMinted = null;
+          cardFreeMinted = Number(await card.freeMinted());
+          cardPaidMinted = Number(await card.paidMinted());
+          if (walletAddr) {
+            cardHasMinted = await card.hasMinted(walletAddr);
+            cardHasPaidMinted = await card.hasPaidMinted(walletAddr);
+          } else {
+            cardHasMinted = null;
+            cardHasPaidMinted = null;
+          }
           renderCardModal();
         } catch (e) {
           setMintStatus("Couldn't reach the card contract on Sepolia: " + errText(e), true);
@@ -2160,6 +2197,10 @@
         if (cardHasMinted) { openModal("cardModal"); refreshCardModal(); return; }
         if (!walletAddr) { setMintStatus("Connect wallet (Sepolia) to mint — approve the connection in your wallet."); connectWallet(); return; }
         if (!walletChainOk) { setMintStatus("Switch to Sepolia to mint — approve the network switch in your wallet."); switchToSepolia(); return; }
+        if (cardFreeMinted != null && cardFreeMinted >= FREE_SUPPLY) {
+          setMintStatus("Free mint sold out — all " + fmtInt(FREE_SUPPLY) + " free cards are gone. The paid mint (0.5 ETH) is still open while paid supply lasts.", true);
+          return;
+        }
         var btn = el("heroMintBtn");
         try {
           if (btn) btn.disabled = true;
@@ -2193,6 +2234,49 @@
         }
       }
 
+      /* Paid mint: mintPaid() with exactly 0.5 Sepolia ETH of value.
+         1 per wallet, only while the 1,111 paid supply lasts. The ETH
+         goes to the contract owner on-chain. */
+      async function mintPaidCard() {
+        var blocked = cardBlockReason();
+        if (blocked) { setMintStatus(blocked, true); return; }
+        if (!walletAddr) { setMintStatus("Connect wallet (Sepolia) to mint — approve the connection in your wallet."); connectWallet(); return; }
+        if (!walletChainOk) { setMintStatus("Switch to Sepolia to mint — approve the network switch in your wallet."); switchToSepolia(); return; }
+        if (cardHasPaidMinted) { setMintStatus("You have already used your paid mint — 1 paid card per wallet. Your cards are in “My Card”.", true); return; }
+        if (cardPaidMinted != null && cardPaidMinted >= PAID_SUPPLY) { setMintStatus("Paid mint sold out — all " + fmtInt(PAID_SUPPLY) + " paid cards are gone.", true); return; }
+        var btn = el("heroPaidMintBtn");
+        try {
+          if (btn) btn.disabled = true;
+          setMintStatus("Paid mint… confirm in your wallet — exactly 0.5 Sepolia ETH, plus gas.");
+          var card = await cardWrite();
+          var tx = await card.mintPaid({ value: BigInt(PAID_PRICE_WEI) });
+          setMintStatus("Paid mint… transaction sent, waiting for confirmation.");
+          var receipt = await tx.wait();
+          var newId = null;
+          for (var i = 0; i < receipt.logs.length; i++) {
+            try {
+              var parsed = card.interface.parseLog(receipt.logs[i]);
+              if (parsed && parsed.name === "PaidMinted") { newId = parsed.args.tokenId; break; }
+            } catch (e) {}
+          }
+          if (newId != null) {
+            var tr = loadCardTracked(walletAddr);
+            if (tr.tokenId == null) saveCardTracked(walletAddr, { tokenId: Number(newId), level: tr.level, xp: tr.xp });
+            setMintStatus("Paid mint confirmed! Your Squeek Maze Card is token #" + newId.toString() + " — find it under “My Card”.");
+          } else {
+            setMintStatus("Paid mint confirmed! Find your card under “My Card”.");
+          }
+          cardHasPaidMinted = true;
+          fetchMintInfo();
+          loadMyCard();
+        } catch (e) {
+          setMintStatus("Paid mint failed: " + errText(e), true);
+        } finally {
+          if (btn) btn.disabled = false;
+          renderCardModal();
+        }
+      }
+
       async function syncCardLevel() {
         var blocked = cardBlockReason();
         if (blocked) { setCardStatus(blocked, true); return; }
@@ -2206,7 +2290,7 @@
           try { tokenOwner = await read.ownerOf(cardState.tokenId); } catch (eO) { tokenOwner = null; }
           var me = walletAddr.toLowerCase();
           var warn = el("syncWarn");
-          // v2 rule: syncLevel is allowed for the contract owner, the
+          // v3 rule: syncLevel is allowed for the contract owner, the
           // gameAddress, or the owner of this specific tokenId — so a
           // player who owns the card can sync it themselves.
           var canSync = ownerAddr.toLowerCase() === me || gameAddr.toLowerCase() === me ||
@@ -2329,7 +2413,7 @@
         }
       }
       /* ================= MARKETPLACE BROWSE =================
-         An OpenSea/Element-style browse view over the v2 market:
+         An OpenSea/Element-style browse view over the v3 market:
          a grid of every ACTIVE listing (discovered by scanning
          tokenId 1..totalMinted() and keeping listings whose
          getListing() says active), enriched with each card's stats
@@ -2337,7 +2421,7 @@
          from the market's Listed / Bought / Cancelled events.
          All reads go through the public Sepolia RPC provider — no
          wallet needed to browse; buying uses the wallet signer. */
-      var MARKET_DEPLOY_BLOCK = 12095979;   // v2 market deployment block (Sepolia)
+      var MARKET_DEPLOY_BLOCK = 12096126;   // v3 market deployment block (Sepolia)
       var mktListings = [];        // enriched active listings, tokenId ascending
       var mktGridLoading = false, mktFeedLoading = false;
       var mktBlockTimes = {};      // blockNumber -> unix seconds (cache)
@@ -2581,7 +2665,7 @@
         if (!events.length) {
           var empty = document.createElement("p");
           empty.className = "mkt-note";
-          empty.textContent = "No market activity yet — listings, sales and cancellations on the v2 market will show up here.";
+          empty.textContent = "No market activity yet — listings, sales and cancellations on the v3 market will show up here.";
           feed.appendChild(empty);
           return;
         }
@@ -2627,6 +2711,7 @@
       }
 
       el("heroMintBtn").addEventListener("click", function () { sfx.click(); mintCard(); });
+      el("heroPaidMintBtn").addEventListener("click", function () { sfx.click(); mintPaidCard(); });
       el("syncBtn").addEventListener("click", function () { sfx.click(); syncCardLevel(); });
       el("listBtn").addEventListener("click", function () { sfx.click(); listMyCard(); });
       el("cancelBtn").addEventListener("click", function () { sfx.click(); cancelMyListing(); });
@@ -2897,7 +2982,7 @@
           walletAddr = null; walletChainOk = false;
           ciChain = null;
           var txEl = el("ciTx"); if (txEl) txEl.hidden = true;
-          resetCardState(); cardHasMinted = null; cardTotalMinted = null; renderCardModal(); fetchMintInfo();
+          resetCardState(); cardHasMinted = null; cardHasPaidMinted = null; cardTotalMinted = null; cardFreeMinted = null; cardPaidMinted = null; renderCardModal(); fetchMintInfo();
           setWalletMsg("Wallet disconnected here. The game plays on — reconnect any time to check in.");
           renderCheckin();
         } else connectWallet();
