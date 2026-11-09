@@ -346,6 +346,24 @@
       .card-msg:empty { display: none; }
       .card-msg.err { color: #ff9d94; }
 
+      /* ---------- card art (NFT image from tokenURI metadata) ---------- */
+      .card-art { margin: 0 0 12px; border: 2px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel); }
+      .card-art.r0 { border-color: #8d97a5; }
+      .card-art.r1 { border-color: #4da3ff; }
+      .card-art.r2 { border-color: #a06be8; }
+      .card-art.r3 { border-color: var(--gold); }
+      .card-art img { display: block; width: 100%; height: 300px; object-fit: contain; background: #101018; }
+      .card-art figcaption { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 12px; font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 600; letter-spacing: .06em; color: var(--soft); }
+      .card-art figcaption .rname { color: var(--cream); }
+
+      /* ---------- on-chain check-in tx link + lives lockout ---------- */
+      .ci-tx { margin: 10px 0 0; font-size: 13.5px; color: var(--soft); }
+      .ci-tx[hidden] { display: none; }
+      .ci-tx a { color: var(--gold); text-decoration: underline; text-underline-offset: 3px; }
+      .hero-lock { margin: 10px auto 0; max-width: 54ch; font-size: 14.5px; font-weight: 600; line-height: 1.45; color: #ffb3ab; }
+      .hero-lock[hidden] { display: none; }
+      .pbtn.locked { filter: saturate(.35) brightness(.72); }
+
       @media (max-width: 860px) {
         .live-grid { grid-template-columns: 1fr 1fr; }
         .grid { grid-template-columns: 1fr; }
@@ -401,6 +419,7 @@
             <button class="pbtn dark" id="howBtn" type="button">How to play</button>
           </div>
           <p class="hero-mint-status" id="heroMintStatus" role="status">Loading free-mint status…</p>
+          <p class="hero-lock" id="heroLock" role="status" hidden></p>
           <div class="hero-links">
             <button class="mbtn" id="liveBtn" type="button">Live feed</button>
             <button class="mbtn" id="genesisBtn" type="button">My Genesis run</button>
@@ -614,19 +633,20 @@
       <div class="mbox">
         <button class="mclose" type="button" data-close aria-label="Close">✕</button>
         <h2>Daily check-in</h2>
-        <p class="msub">Optional — connect a wallet on Sepolia to check in. The maze plays exactly the same without one.</p>
+        <p class="msub">Optional — connect a wallet on Sepolia to check in. Each check-in is a real Sepolia transaction recorded by the <a href="https://sepolia.etherscan.io/address/0x5d222D54c7605fF68eF555456C51441369421ECF" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">DailyCheckin contract ↗</a>, so your streak lives on-chain. The day resets at 07:00 WIB (00:00 UTC). The maze plays exactly the same without a wallet.</p>
         <div class="ci-row">
           <div>
             <p class="kicker" style="margin-bottom:4px">Wallet · Sepolia testnet</p>
             <p class="ci-addr" id="ciAddr">No wallet connected</p>
-            <p class="ci-sub" id="ciStatus">Connect a browser wallet (like MetaMask) on the Sepolia testnet to check in. Checking in costs no gas and sends no transaction — it's recorded in this browser, per wallet address.</p>
+            <p class="ci-sub" id="ciStatus">Connect a browser wallet (like MetaMask) on the Sepolia testnet to check in. Checking in sends one small transaction to the DailyCheckin contract on Sepolia (testnet gas) and records your day and streak on-chain.</p>
           </div>
           <div class="ci-actions">
-            <div class="ci-streak"><span class="n" id="ciStreak">—</span><span class="l">Day streak</span></div>
+            <div class="ci-streak"><span class="n" id="ciStreak">—</span><span class="l">Day streak · on-chain</span></div>
             <button class="btn big" id="checkinBtn" type="button">Check in today</button>
           </div>
         </div>
         <p class="ci-bonus" id="ciBonus" hidden>Bonus ready: +1 extra life on your next run</p>
+        <p class="ci-tx" id="ciTx" hidden>Last check-in confirmed on Sepolia: <a id="ciTxLink" href="#" target="_blank" rel="noopener">view transaction ↗</a></p>
         <p class="ci-msg" id="walletMsg" role="status"></p>
       </div>
     </div>
@@ -646,6 +666,10 @@
 
         <div class="card-sec" id="ownedSec" hidden>
           <p class="kicker">Your card</p>
+          <figure class="card-art" id="cardArt" hidden>
+            <img id="cardImg" alt="Your Squeek Maze Card artwork, loaded from the NFT metadata" />
+            <figcaption><span class="rname" id="cardName">Squeek Maze Card</span><span id="cardArtNote">Artwork from the NFT metadata (tokenURI)</span></figcaption>
+          </figure>
           <div class="card-stats">
             <div class="stat"><p class="label">Token ID</p><p class="value" id="cardTokenId">—</p></div>
             <div class="stat"><p class="label">Rarity</p><p class="value" id="cardRarity">—</p></div>
@@ -1287,6 +1311,8 @@
         return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2);
       }
       function startRun() {
+        // Lives lockout: a game over locks play until the 07:00 WIB reset.
+        if (livesLockedOut()) { showLockout(); return; }
         level = 1; score = 0; runElapsed = 0; runCheese = 0;
         // Card Lives mapping: an owned Squeek Maze Card sets the starting
         // lives (its Lives stat is 3–5); with no card the run starts at 3,
@@ -1323,10 +1349,11 @@
       function gameOver() {
         state = "over";
         sfx.over();
+        lockLivesToday();   // nyawa habis — no more play until the 07:00 WIB reset
         var isBest = saveBest();
         showOverlay("Out of lives",
-          "The beetles win this round — Squeektoshi is fine, just very dizzy. The maze from block <strong>#" + fmtInt(mazeSeedBlock) + "</strong> will still be here when you retry.",
-          "Run it again", true, isBest);
+          "The beetles win this round — Squeektoshi is fine, just very dizzy. That's the last of today's lives (<strong>nyawa habis</strong>): play unlocks again at the daily reset, <strong>tomorrow at 07:00 WIB</strong>. The maze from block <strong>#" + fmtInt(mazeSeedBlock) + "</strong> will still be here then.",
+          "Back tomorrow", true, isBest);
         lastRun = { score: Math.floor(score), level: level, cheese: runCheese, time: runElapsed };
         el("sumTime").textContent = fmtTime(runElapsed);
         el("sumCheese").textContent = String(runCheese);
@@ -1429,8 +1456,17 @@
       }, { passive: true });
       el("ovBtn").addEventListener("click", function () {
         sfx.click();
-        if (state === "clear") nextLevel();
-        else startRun();
+        if (state === "clear") { nextLevel(); return; }
+        // Locked out for the day: the overlay button just takes the
+        // player back home — startRun() stays gated until the reset.
+        if (livesLockedOut()) {
+          el("overlay").hidden = true;
+          state = "ready";
+          showView("home");
+          renderLockout();
+          return;
+        }
+        startRun();
       });
       el("ovClose").addEventListener("click", function () {
         sfx.click();
@@ -1734,10 +1770,12 @@
       /* =====================================================================
          WALLET (OPTIONAL) + DAILY CHECK-IN + SHARE ON X
          The wallet is never needed to play: the maze, lives, score and
-         controls all work with no wallet connected. Connecting only
-         unlocks the daily check-in, which is recorded locally in this
-         browser (per wallet address + date) — no gas, no transaction,
-         nothing signed.
+         controls all work with no wallet connected. Connecting unlocks
+         the daily check-in, which is a real Sepolia transaction to the
+         DailyCheckin contract (0x5d222D…421ECF): the day + streak are
+         recorded on-chain, keyed by UTC day — and 00:00 UTC is exactly
+         the game's 07:00 WIB daily reset. A local record is kept only
+         as a cache and to carry the +1-life bonus flag.
          ===================================================================== */
       var SEPOLIA_HEX = "0xaa36a7";   // 11155111
       var walletAddr = null, walletChainOk = false;
@@ -1752,11 +1790,24 @@
       // instead of calling the zero address.
       const CARD_ADDRESS = "0x2bfEA82aea3B8bCA74234f0052d030f17156A293";
       const MARKET_ADDRESS = "0x08fB366197B7cc39d12A3CD74038A4E414f6fd70";
+      // DailyCheckin — deployed on Sepolia, permissionless, no owner:
+      // https://sepolia.etherscan.io/address/0x5d222D54c7605fF68eF555456C51441369421ECF
+      const CHECKIN_ADDRESS = "0x5d222D54c7605fF68eF555456C51441369421ECF";
+      const CHECKIN_ABI = [
+        "function checkIn()",
+        "function canCheckIn(address user) view returns (bool)",
+        "function getCheckin(address user) view returns (uint256 lastDay, uint256 currentStreak)",
+        "event CheckedIn(address indexed user, uint256 indexed day, uint256 streak)"
+      ];
+      // The game's day is the UTC day (same rule as the DailyCheckin
+      // contract: block.timestamp / 86400). 00:00 UTC == 07:00 WIB, so
+      // this number rolls over exactly at the 07:00 WIB daily reset.
+      function utcDayNumber() { return Math.floor(Date.now() / 86400000); }
       const CARD_ABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721IncorrectOwner","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721InsufficientApproval","type":"error"},{"inputs":[{"internalType":"address","name":"approver","type":"address"}],"name":"ERC721InvalidApprover","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"}],"name":"ERC721InvalidOperator","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721InvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"receiver","type":"address"}],"name":"ERC721InvalidReceiver","type":"error"},{"inputs":[{"internalType":"address","name":"sender","type":"address"}],"name":"ERC721InvalidSender","type":"error"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721NonexistentToken","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"OwnableInvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"OwnableUnauthorizedAccount","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":false,"internalType":"bool","name":"approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"newBaseURI","type":"string"}],"name":"BaseURIUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"address","name":"minter","type":"address"},{"indexed":false,"internalType":"uint256","name":"speed","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"lives","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"luck","type":"uint256"},{"indexed":false,"internalType":"enum SqueekMazeCard.Rarity","name":"rarity","type":"uint8"}],"name":"CardMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldAddress","type":"address"},{"indexed":true,"internalType":"address","name":"newAddress","type":"address"}],"name":"GameAddressUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"level","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"xp","type":"uint256"}],"name":"LevelSynced","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newLevel","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newXp","type":"uint256"}],"name":"XpAdded","type":"event"},{"inputs":[],"name":"EPIC_MIN_TOTAL","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"LEGENDARY_MIN_TOTAL","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MAX_SUPPLY","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"RARE_MIN_TOTAL","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"addXp","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"gameAddress","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"","type":"address"}],"name":"getCard","outputs":[{"internalType":"uint256","name":"speed","type":"uint256"},{"internalType":"uint256","name":"lives","type":"uint256"},{"internalType":"uint256","name":"luck","type":"uint256"},{"internalType":"enum SqueekMazeCard.Rarity","name":"rarity","type":"uint8"},{"internalType":"uint256","name":"level","type":"uint256"},{"internalType":"uint256","name":"xp","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"hasMinted","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"mint","outputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"bool","name":"approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"newBaseURI","type":"string"}],"name":"setBaseURI","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newGameAddress","type":"address"}],"name":"setGameAddress","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"level","type":"uint256"},{"internalType":"uint256","name":"xp","type":"uint256"}],"name":"syncLevel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalMinted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"transferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}];
       const MARKET_ABI = [{"inputs":[{"internalType":"address","name":"nftAddress","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"ReentrancyGuardReentrantCall","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"address","name":"seller","type":"address"},{"indexed":true,"internalType":"address","name":"buyer","type":"address"},{"indexed":false,"internalType":"uint256","name":"price","type":"uint256"}],"name":"Bought","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"address","name":"seller","type":"address"}],"name":"Cancelled","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":true,"internalType":"address","name":"seller","type":"address"},{"indexed":false,"internalType":"uint256","name":"price","type":"uint256"}],"name":"Listed","type":"event"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"buy","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"cancel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"getListing","outputs":[{"internalType":"address","name":"seller","type":"address"},{"internalType":"uint256","name":"price","type":"uint256"},{"internalType":"bool","name":"active","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"price","type":"uint256"}],"name":"list","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"nft","outputs":[{"internalType":"contract IERC721","name":"","type":"address"}],"stateMutability":"view","type":"function"}];
       var RARITY_NAMES = ["Common", "Rare", "Epic", "Legendary"];
       var ZERO_ADDR = "0x0000000000000000000000000000000000000000";
-      var cardState = {owned:false, tokenId:null, speed:0, lives:0, luck:0, rarity:0, level:1, xp:0, onChainLevel:1, onChainXp:0};
+      var cardState = {owned:false, tokenId:null, speed:0, lives:0, luck:0, rarity:0, level:1, xp:0, onChainLevel:1, onChainXp:0, image:null, name:""};
       var cardTotalMinted = null, cardHasMinted = null, cardLoading = false, cardBlockedMsg = null;
       var marketListing = null;   // last checked listing: {tokenId, seller, price (BigInt wei), active}
 
@@ -1840,6 +1891,14 @@
       function marketRead() {
         return new ethers.Contract(MARKET_ADDRESS, MARKET_ABI, sepoliaReadProvider());
       }
+      function checkinRead() {
+        return new ethers.Contract(CHECKIN_ADDRESS, CHECKIN_ABI, sepoliaReadProvider());
+      }
+      async function checkinWrite() {
+        var p = new ethers.BrowserProvider(window.ethereum);
+        var s = await p.getSigner();
+        return new ethers.Contract(CHECKIN_ADDRESS, CHECKIN_ABI, s);
+      }
       async function cardWrite() {
         var p = new ethers.BrowserProvider(window.ethereum);
         var s = await p.getSigner();
@@ -1873,7 +1932,7 @@
         try { localStorage.setItem(cardKey(addr), JSON.stringify(rec)); } catch (e) {}
       }
       function resetCardState() {
-        cardState = {owned:false, tokenId:null, speed:0, lives:0, luck:0, rarity:0, level:1, xp:0, onChainLevel:1, onChainXp:0};
+        cardState = {owned:false, tokenId:null, speed:0, lives:0, luck:0, rarity:0, level:1, xp:0, onChainLevel:1, onChainXp:0, image:null, name:""};
         marketListing = null;
       }
 
@@ -1885,6 +1944,17 @@
         el("noCardSec").hidden = cardState.owned;
         el("ownedSec").hidden = !cardState.owned;
         if (cardState.owned) {
+          // NFT artwork, fetched from the tokenURI metadata in loadMyCard.
+          var art = el("cardArt"), img = el("cardImg");
+          if (cardState.image) {
+            if (img.getAttribute("src") !== cardState.image) img.src = cardState.image;
+            img.alt = (cardState.name || "Squeek Maze Card #" + cardState.tokenId) + " — NFT artwork";
+            art.className = "card-art r" + cardState.rarity;
+            el("cardName").textContent = cardState.name || ("Squeek Maze Card #" + cardState.tokenId);
+            art.hidden = false;
+          } else {
+            art.hidden = true;
+          }
           el("cardTokenId").textContent = "#" + cardState.tokenId;
           el("cardRarity").textContent = RARITY_NAMES[cardState.rarity] || "Common";
           el("cardSpeed").textContent = String(cardState.speed);
@@ -1923,6 +1993,25 @@
         if (walletAddr && !walletChainOk) setCardStatus("Wallet connected, but not on Sepolia — your card is read from the Sepolia chain either way; switch to Sepolia to Sync Level or use the marketplace.");
         fetchMintInfo();
         if (walletAddr) loadMyCard();
+      }
+
+      /* Fetch + parse an NFT metadata document from a tokenURI: supports
+         inline data: JSON (base64 or URL-encoded) and plain https URLs. */
+      async function fetchCardMetadata(uri) {
+        if (!uri) return null;
+        if (uri.indexOf("data:application/json;base64,") === 0) {
+          return JSON.parse(atob(uri.slice("data:application/json;base64,".length)));
+        }
+        if (uri.indexOf("data:application/json,") === 0) {
+          return JSON.parse(decodeURIComponent(uri.slice("data:application/json,".length)));
+        }
+        var res = await fetch(uri, { cache: "force-cache" });
+        if (!res.ok) return null;
+        return await res.json();
+      }
+      function normalizeImageUrl(u) {
+        if (u.indexOf("ipfs://") === 0) return "https://ipfs.io/ipfs/" + u.slice("ipfs://".length);
+        return u;
       }
 
       /* Load the connected wallet's card: the stored tokenId first
@@ -1964,6 +2053,18 @@
           cardState.onChainXp = Number(c.xp);
           cardState.level = tracked.level;
           cardState.xp = tracked.xp;
+          // Artwork: read tokenURI on-chain, fetch the metadata JSON it
+          // points to, and take its image (a data URI for SQMC cards).
+          // A metadata failure must never break the card display itself.
+          cardState.image = null; cardState.name = "";
+          try {
+            var uri = await card.tokenURI(tokenId);
+            var meta = await fetchCardMetadata(uri);
+            if (meta) {
+              if (meta.name) cardState.name = String(meta.name);
+              if (meta.image) cardState.image = normalizeImageUrl(String(meta.image));
+            }
+          } catch (eMeta) {}
           saveCardTracked(walletAddr, { tokenId: cardState.tokenId, level: cardState.level, xp: cardState.xp });
           cardHasMinted = true;
           renderCardModal();
@@ -2170,10 +2271,104 @@
       }
       function ciKey(addr) { return "squeekmaze.checkin." + addr.toLowerCase(); }
       function loadCheckin(addr) {
-        try { var raw = localStorage.getItem(ciKey(addr)); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+        try {
+          var raw = localStorage.getItem(ciKey(addr));
+          if (!raw) return null;
+          var rec = JSON.parse(raw);
+          // Migrate pre-on-chain records: they stored `last` as a local
+          // date string ("YYYY-MM-DD") instead of a UTC day number.
+          // Convert it (a date-only string parses as UTC midnight) so an
+          // existing streak/bonus is never wiped by the switch.
+          if (rec && rec.lastDay == null && rec.last) {
+            var p = Date.parse(rec.last);
+            if (!isNaN(p)) rec.lastDay = Math.floor(p / 86400000);
+          }
+          return rec;
+        } catch (e) { return null; }
       }
       function saveCheckin(addr, rec) {
         try { localStorage.setItem(ciKey(addr), JSON.stringify(rec)); } catch (e) {}
+      }
+      /* On-chain check-in state for the connected wallet, read from the
+         DailyCheckin contract: {lastDay, streak, canCheckIn} or null
+         when not read yet / unreachable. The contract is the source of
+         truth for "checked in today" and the streak number; the local
+         record only caches it and carries the +1-life bonus flag. */
+      var ciChain = null, ciChainLoading = false;
+      async function refreshCheckinChain() {
+        if (!walletAddr || ciChainLoading) return;
+        if (typeof window.ethers === "undefined") return;
+        ciChainLoading = true;
+        try {
+          var rd = checkinRead();
+          var res = await Promise.all([rd.getCheckin(walletAddr), rd.canCheckIn(walletAddr)]);
+          ciChain = { lastDay: Number(res[0].lastDay), streak: Number(res[0].currentStreak), canCheckIn: !!res[1] };
+        } catch (e) {
+          ciChain = null;   // RPC unreachable — fall back to the local record
+        } finally {
+          ciChainLoading = false;
+          renderCheckin();
+        }
+      }
+      /* Record today's check-in in the local cache after it is confirmed
+         on-chain. The +1-life bonus is granted only the first time today
+         is recorded locally, so re-opening the modal can't re-grant it. */
+      function markLocalChecked(streak, txHash) {
+        if (!walletAddr) return;
+        var today = utcDayNumber();
+        var rec = loadCheckin(walletAddr) || { lastDay: 0, streak: 0, bonus: false };
+        if (Number(rec.lastDay) !== today) { rec.lastDay = today; rec.bonus = true; }
+        rec.streak = streak;
+        if (txHash) rec.tx = txHash;
+        saveCheckin(walletAddr, rec);
+        if (rec.bonus) bonusLife = true;
+      }
+      function showCiTx(hash) {
+        var wrap = el("ciTx"), link = el("ciTxLink");
+        if (!wrap || !link || !hash) return;
+        link.href = "https://sepolia.etherscan.io/tx/" + hash;
+        wrap.hidden = false;
+      }
+
+      /* =====================================================================
+         LIVES LOCKOUT — user rule: when a run ends out of lives, the
+         game cannot be played again until the next daily reset
+         (07:00 WIB == 00:00 UTC, the same UTC-day boundary the
+         DailyCheckin contract uses). The lockout day is kept per
+         browser in localStorage; it lifts by itself when the UTC day
+         number rolls over.
+         ===================================================================== */
+      var LOCKOUT_KEY = "squeekmaze.lockoutDay";
+      function lockoutDay() {
+        try {
+          var v = localStorage.getItem(LOCKOUT_KEY);
+          return v == null ? -1 : parseInt(v, 10);
+        } catch (e) { return -1; }
+      }
+      function livesLockedOut() { return lockoutDay() === utcDayNumber(); }
+      function lockLivesToday() {
+        try { localStorage.setItem(LOCKOUT_KEY, String(utcDayNumber())); } catch (e) {}
+        renderLockout();
+      }
+      function renderLockout() {
+        var locked = livesLockedOut();
+        var note = el("heroLock");
+        if (note) {
+          note.hidden = !locked;
+          if (locked) note.textContent = "Nyawa habis — out of lives for today. Squeektoshi is resting: play unlocks again at the daily reset, tomorrow at 07:00 WIB.";
+        }
+        var pb = el("playBtn");
+        if (pb) {
+          pb.textContent = locked ? "Play · locked until 07:00 WIB" : "▶ Play";
+          pb.classList.toggle("locked", locked);
+        }
+      }
+      function showLockout() {
+        state = "over";
+        showOverlay("Nyawa habis — out of lives",
+          "You've used up all your lives for today. Squeektoshi needs to rest — play unlocks again at the daily reset, <strong>tomorrow at 07:00 WIB</strong>. Your best score is safe until then.",
+          "Back tomorrow", false, false);
+        el("restartBtn").disabled = true;
       }
       function consumeCheckinBonus() {
         if (walletAddr) {
@@ -2190,17 +2385,27 @@
         renderWallet();
         var btn = el("checkinBtn"), streakEl = el("ciStreak"), bonusEl = el("ciBonus");
         var rec = walletAddr ? loadCheckin(walletAddr) : null;
-        var today = dayStr(new Date());
-        streakEl.textContent = rec ? String(rec.streak) : "—";
+        var today = utcDayNumber();
+        // Keep the "view transaction" link for today's confirmed check-in.
+        var txWrap = el("ciTx");
+        if (txWrap) {
+          if (walletAddr && rec && rec.tx && Number(rec.lastDay) === today) showCiTx(rec.tx);
+          else txWrap.hidden = true;
+        }
+        // The contract decides when it has answered; the local cache is
+        // only the fallback while the Sepolia read is still in flight.
+        var checked = ciChain ? !ciChain.canCheckIn : !!(rec && Number(rec.lastDay) === today);
+        if (ciChain) streakEl.textContent = String(ciChain.streak);
+        else streakEl.textContent = rec ? String(rec.streak) : "—";
         if (!walletAddr) {
           btn.disabled = false;
           btn.textContent = "Connect wallet to check in";
           bonusEl.hidden = true;
-        } else if (rec && rec.last === today) {
+        } else if (checked) {
           btn.disabled = true;
-          btn.textContent = "Already checked in today ✓";
-          bonusEl.hidden = !rec.bonus;
-          if (rec.bonus) bonusLife = true;
+          btn.textContent = "Checked in today ✓ (on-chain)";
+          bonusEl.hidden = !(rec && rec.bonus);
+          if (rec && rec.bonus) bonusLife = true;
         } else {
           btn.disabled = false;
           btn.textContent = "Check in today";
@@ -2214,6 +2419,7 @@
           walletChainOk = String(id).toLowerCase() === SEPOLIA_HEX;
           renderCheckin();
           fetchMintInfo();
+          refreshCheckinChain();
           if (walletAddr) loadMyCard();
         }).catch(function () { walletChainOk = false; renderCheckin(); });
       }
@@ -2253,6 +2459,7 @@
             walletChainOk = String(id).toLowerCase() === SEPOLIA_HEX;
             renderCheckin();
             fetchMintInfo();
+            refreshCheckinChain();
             loadMyCard();
             if (!walletChainOk) {
               setWalletMsg("Wallet connected, but it's not on Sepolia — switching you to Sepolia (chain ID 11155111)…", true);
@@ -2265,24 +2472,69 @@
             setWalletMsg("Wallet connection was cancelled or failed — no problem, the game still plays fine without one.", true);
           });
       }
-      function doCheckin() {
+      /* Daily check-in = a real transaction to the DailyCheckin
+         contract on Sepolia. Reads (canCheckIn / getCheckin) go through
+         the public RPCs; the write goes through the wallet signer. The
+         local record is updated only after the tx confirms, and only
+         as a cache + bonus carrier — the streak shown is the chain's. */
+      async function doCheckin() {
         if (!walletAddr) { setWalletMsg("Connect your wallet first — then you can check in."); connectWallet(); return; }
         if (!walletChainOk) { setWalletMsg("You're not on Sepolia — switch to Sepolia (chain ID 11155111) to check in.", true); switchToSepolia(); return; }
-        var today = dayStr(new Date());
-        var yest = dayStr(new Date(Date.now() - 86400000));
-        var rec = loadCheckin(walletAddr) || { last: null, streak: 0, bonus: false };
-        if (rec.last === today) { setWalletMsg("Already checked in today — streak: " + rec.streak + (rec.streak === 1 ? " day" : " days") + "."); renderCheckin(); return; }
-        rec.streak = rec.last === yest ? rec.streak + 1 : 1;
-        rec.last = today;
-        rec.bonus = true;
-        saveCheckin(walletAddr, rec);
-        bonusLife = true;
-        setWalletMsg("Checked in! Streak: " + rec.streak + (rec.streak === 1 ? " day" : " days") + ". Bonus ready: +1 extra life on your next run.");
-        renderCheckin();
+        if (typeof window.ethers === "undefined") { setWalletMsg("ethers.js failed to load — check-in is unavailable right now.", true); return; }
+        var btn = el("checkinBtn");
+        try {
+          btn.disabled = true;
+          btn.textContent = "Checking in…";
+          var rd = checkinRead();
+          var can = await rd.canCheckIn(walletAddr);
+          if (!can) {
+            var cur0 = await rd.getCheckin(walletAddr);
+            ciChain = { lastDay: Number(cur0.lastDay), streak: Number(cur0.currentStreak), canCheckIn: false };
+            markLocalChecked(ciChain.streak);
+            setWalletMsg("Already checked in on-chain today — streak: " + ciChain.streak + (ciChain.streak === 1 ? " day" : " days") + ".");
+            return;
+          }
+          setWalletMsg("Checking in on Sepolia… confirm the transaction in your wallet (small testnet gas).");
+          var cw = await checkinWrite();
+          var tx = await cw.checkIn();
+          setWalletMsg("Check-in sent — waiting for the Sepolia confirmation…");
+          var receipt = await tx.wait();
+          var newStreak = null;
+          try {
+            var iface = new ethers.Interface(CHECKIN_ABI);
+            for (var i = 0; i < receipt.logs.length; i++) {
+              try {
+                var parsed = iface.parseLog(receipt.logs[i]);
+                if (parsed && parsed.name === "CheckedIn") { newStreak = Number(parsed.args.streak); break; }
+              } catch (eLog) {}
+            }
+          } catch (eRc) {}
+          if (newStreak == null) {
+            var cur1 = await rd.getCheckin(walletAddr);
+            newStreak = Number(cur1.currentStreak);
+          }
+          ciChain = { lastDay: utcDayNumber(), streak: newStreak, canCheckIn: false };
+          markLocalChecked(newStreak, tx.hash);
+          showCiTx(tx.hash);
+          setWalletMsg("Checked in on Sepolia! Streak: " + newStreak + (newStreak === 1 ? " day" : " days") + ". Bonus ready: +1 extra life on your next run.");
+        } catch (e) {
+          var t = errText(e);
+          if (/already checked in/i.test(t)) {
+            ciChain = null;
+            refreshCheckinChain();
+            setWalletMsg("Already checked in on-chain today — your streak is safe. Come back after the 07:00 WIB reset.");
+          } else {
+            setWalletMsg("Check-in failed: " + t, true);
+          }
+        } finally {
+          renderCheckin();
+        }
       }
       el("walletBtn").addEventListener("click", function () {
         if (walletAddr) {
           walletAddr = null; walletChainOk = false;
+          ciChain = null;
+          var txEl = el("ciTx"); if (txEl) txEl.hidden = true;
           resetCardState(); cardHasMinted = null; cardTotalMinted = null; renderCardModal(); fetchMintInfo();
           setWalletMsg("Wallet disconnected here. The game plays on — reconnect any time to check in.");
           renderCheckin();
@@ -2357,7 +2609,7 @@
       el("howBtn").addEventListener("click", function () { sfx.click(); openModal("howModal"); });
       el("liveBtn").addEventListener("click", function () { sfx.click(); openModal("liveModal"); });
       el("genesisBtn").addEventListener("click", function () { sfx.click(); openModal("genesisModal"); });
-      el("checkinOpenBtn").addEventListener("click", function () { sfx.click(); openModal("checkinModal"); });
+      el("checkinOpenBtn").addEventListener("click", function () { sfx.click(); openModal("checkinModal"); refreshCheckinChain(); });
       el("cardBtn").addEventListener("click", function () { sfx.click(); openModal("cardModal"); refreshCardModal(); });
       el("heroSoundBtn").addEventListener("click", function () { toggleSound(); });
       document.querySelectorAll(".modal").forEach(function (m) {
@@ -2373,6 +2625,7 @@
       buildLevel(2000, false);
       renderLive();
       renderHud();
+      renderLockout();
       initWallet();
       renderHeroMint();
       fetchMintInfo();
