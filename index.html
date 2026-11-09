@@ -362,6 +362,41 @@
       .hero-lock[hidden] { display: none; }
       .pbtn.locked { filter: saturate(.35) brightness(.72); }
 
+      /* ---------- marketplace browse (listed cards + activity) ---------- */
+      .mbox.wide { max-width: 940px; }
+      .mkt-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; }
+      .mkt-head .kicker { margin: 0; }
+      .mkt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: 14px; margin-bottom: 6px; }
+      .mkt-item { background: var(--panel); border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+      .mkt-item.r0 { border-color: #8d97a5; }
+      .mkt-item.r1 { border-color: #4da3ff; }
+      .mkt-item.r2 { border-color: #a06be8; }
+      .mkt-item.r3 { border-color: var(--gold); }
+      .mkt-item img { display: block; width: 100%; height: 168px; object-fit: contain; background: #101018; }
+      .mkt-noimg { height: 168px; display: grid; place-items: center; background: #101018; color: var(--faint); font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-align: center; padding: 0 10px; }
+      .mkt-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+      .mkt-title { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+      .mkt-title .tid { font-family: "Oswald", sans-serif; font-size: 21px; font-weight: 600; line-height: 1; color: var(--cream); }
+      .mkt-stats { display: flex; flex-wrap: wrap; gap: 6px; }
+      .mkt-stats span { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; border: 1.5px solid var(--line-soft); border-radius: 6px; padding: 2px 7px; background: var(--panel-2); color: var(--soft); }
+      .mkt-stats span b { color: var(--cream); font-weight: 600; }
+      .mkt-price { font-family: "Oswald", sans-serif; font-size: 23px; font-weight: 600; line-height: 1.1; color: var(--gold); font-variant-numeric: tabular-nums; }
+      .mkt-price small { font-size: 12px; font-weight: 500; color: var(--soft); letter-spacing: .04em; }
+      .mkt-seller { margin: 0; font-size: 12.5px; color: var(--soft); }
+      .mkt-seller .mono { font-family: "IBM Plex Mono", monospace; font-weight: 600; color: var(--cream); }
+      .mkt-buy { margin-top: auto; width: 100%; }
+      .mkt-empty { border: 1.5px dashed var(--line); border-radius: 12px; padding: 26px 18px; text-align: center; color: var(--soft); font-size: 14.5px; background: var(--panel); margin: 0 0 6px; }
+      .mkt-empty strong { color: var(--cream); }
+      .mkt-empty[hidden] { display: none; }
+      .mkt-feed { display: flex; flex-direction: column; gap: 8px; }
+      .mkt-note { margin: 0; font-size: 14px; color: var(--soft); }
+      .mkt-ev { display: flex; flex-wrap: wrap; gap: 5px 12px; align-items: center; background: var(--panel); border: 1.5px solid var(--line-soft); border-radius: 10px; padding: 9px 12px; font-size: 13.5px; color: var(--soft); }
+      .mkt-ev .tid { color: var(--cream); font-weight: 700; white-space: nowrap; }
+      .mkt-ev .price { color: var(--gold); font-family: "IBM Plex Mono", monospace; font-weight: 600; white-space: nowrap; }
+      .mkt-ev .who { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; }
+      .mkt-ev .when { margin-left: auto; color: var(--faint); font-size: 12.5px; white-space: nowrap; }
+      .mkt-ev a { color: var(--gold-deep); white-space: nowrap; }
+
       @media (max-width: 860px) {
         .live-grid { grid-template-columns: 1fr 1fr; }
         .grid { grid-template-columns: 1fr; }
@@ -423,6 +458,7 @@
             <button class="mbtn" id="genesisBtn" type="button">My Genesis run</button>
             <button class="mbtn" id="checkinOpenBtn" type="button">Daily check-in</button>
             <button class="mbtn" id="cardBtn" type="button">My Card</button>
+            <button class="mbtn" id="marketBtn" type="button">Marketplace</button>
             <button class="mbtn" id="heroSoundBtn" type="button" aria-pressed="true">♪ Music: on</button>
           </div>
         </div>
@@ -705,6 +741,30 @@
           </div>
           <p id="listingInfo" hidden></p>
           <p class="card-msg" id="marketStatus" role="status"></p>
+          <div class="card-row" style="margin-top:12px">
+            <button class="btn ghost" id="browseMarketBtn" type="button">Browse all listed cards →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="marketModal" hidden role="dialog" aria-modal="true" aria-label="Marketplace">
+      <div class="backdrop"></div>
+      <div class="mbox wide">
+        <button class="mclose" type="button" data-close aria-label="Close">✕</button>
+        <h2>Marketplace</h2>
+        <p class="msub">Every Squeek Maze Card listed for sale on the <a href="https://sepolia.etherscan.io/address/0x9061A6C5C88Efe440DCF75E13582Eb4FB2ef6602" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">v2 market contract ↗</a>, read live from Sepolia. Prices are in Sepolia testnet ETH; buying transfers the card to your wallet at the exact listed price. To sell your own card, use “List for sale” in <strong>My Card</strong>.</p>
+        <div class="mkt-head">
+          <p class="kicker">Cards for sale</p>
+          <span style="flex:1"></span>
+          <button class="btn ghost" id="mktRefreshBtn" type="button">Refresh</button>
+        </div>
+        <p class="card-msg" id="mktStatus" role="status"></p>
+        <div class="mkt-grid" id="mktGrid"></div>
+        <p class="mkt-empty" id="mktEmpty" hidden>No cards listed yet — be the first: open <strong>My Card</strong>, set a price, and list yours for sale.</p>
+        <div class="card-sec">
+          <p class="kicker">Recent activity</p>
+          <div class="mkt-feed" id="mktFeed"><p class="mkt-note">Loading activity…</p></div>
         </div>
       </div>
     </div>
@@ -2193,6 +2253,7 @@
           var tx = await market.list(cardState.tokenId, priceWei);
           await tx.wait();
           setMarketStatus("Listed! Card #" + cardState.tokenId + " is on the market for " + priceStr + " Sepolia ETH.");
+          refreshMarketplace();
         } catch (e) {
           setMarketStatus("Listing failed: " + errText(e), true);
         }
@@ -2239,6 +2300,7 @@
           el("buyBtn").hidden = true;
           el("listingInfo").hidden = true;
           loadMyCard();
+          refreshMarketplace();
         } catch (e) {
           setMarketStatus("Buy failed: " + errText(e), true);
         }
@@ -2261,16 +2323,317 @@
           el("buyBtn").hidden = true;
           el("listingInfo").hidden = true;
           loadMyCard();
+          refreshMarketplace();
         } catch (e) {
           setMarketStatus("Cancel failed: " + errText(e), true);
         }
       }
+      /* ================= MARKETPLACE BROWSE =================
+         An OpenSea/Element-style browse view over the v2 market:
+         a grid of every ACTIVE listing (discovered by scanning
+         tokenId 1..totalMinted() and keeping listings whose
+         getListing() says active), enriched with each card's stats
+         and its tokenURI artwork, plus a Recent Activity feed built
+         from the market's Listed / Bought / Cancelled events.
+         All reads go through the public Sepolia RPC provider — no
+         wallet needed to browse; buying uses the wallet signer. */
+      var MARKET_DEPLOY_BLOCK = 12095979;   // v2 market deployment block (Sepolia)
+      var mktListings = [];        // enriched active listings, tokenId ascending
+      var mktGridLoading = false, mktFeedLoading = false;
+      var mktBlockTimes = {};      // blockNumber -> unix seconds (cache)
+
+      function setMktStatus(txt, isErr) {
+        var m = el("mktStatus");
+        if (!m) return;
+        m.textContent = txt || "";
+        m.className = "card-msg" + (isErr ? " err" : "");
+      }
+      function refreshMarketplace() {
+        loadMarketListings();
+        loadMarketActivity();
+      }
+
+      async function loadMarketListings() {
+        if (mktGridLoading) return;
+        var blocked = readBlockReason();
+        if (blocked) { setMktStatus(blocked, true); return; }
+        mktGridLoading = true;
+        setMktStatus("Loading listings from Sepolia…");
+        el("mktEmpty").hidden = true;
+        try {
+          var card = cardRead(), market = marketRead();
+          var total = Number(await card.totalMinted());
+          var ids = [];
+          for (var i = 1; i <= total; i++) ids.push(i);
+          var raw = await Promise.all(ids.map(async function (id) {
+            try {
+              var l = await market.getListing(id);
+              return { tokenId: id, seller: l.seller, price: l.price, active: !!l.active };
+            } catch (e) { return null; }
+          }));
+          var active = raw.filter(function (l) { return l && l.active; });
+          mktListings = await Promise.all(active.map(async function (l) {
+            var out = { tokenId: l.tokenId, seller: l.seller, price: l.price,
+                        speed: null, lives: null, luck: null, rarity: 0, image: null, name: "" };
+            try {
+              var c = await card.getCard(l.tokenId);
+              out.speed = Number(c.speed); out.lives = Number(c.lives);
+              out.luck = Number(c.luck); out.rarity = Number(c.rarity);
+            } catch (e) {}
+            try {
+              var uri = await card.tokenURI(l.tokenId);
+              var meta = await fetchCardMetadata(uri);
+              if (meta) {
+                if (meta.name) out.name = String(meta.name);
+                if (meta.image) out.image = normalizeImageUrl(String(meta.image));
+              }
+            } catch (e) {}
+            return out;
+          }));
+          renderMarketGrid();
+          setMktStatus(mktListings.length
+            ? mktListings.length + (mktListings.length === 1 ? " card" : " cards") + " listed for sale · " + fmtInt(total) + " minted"
+            : "");
+        } catch (e) {
+          setMktStatus("Couldn't load the marketplace from Sepolia: " + errText(e), true);
+        } finally {
+          mktGridLoading = false;
+        }
+      }
+
+      function renderMarketGrid() {
+        var grid = el("mktGrid");
+        grid.innerHTML = "";
+        el("mktEmpty").hidden = mktListings.length > 0;
+        mktListings.forEach(function (l) {
+          var item = document.createElement("article");
+          item.className = "mkt-item r" + l.rarity;
+          if (l.image) {
+            var img = document.createElement("img");
+            img.src = l.image;
+            img.alt = (l.name || ("Squeek Maze Card #" + l.tokenId)) + " — NFT artwork";
+            img.loading = "lazy";
+            item.appendChild(img);
+          } else {
+            var noimg = document.createElement("div");
+            noimg.className = "mkt-noimg";
+            noimg.textContent = "Artwork unavailable";
+            item.appendChild(noimg);
+          }
+          var body = document.createElement("div");
+          body.className = "mkt-body";
+          var title = document.createElement("div");
+          title.className = "mkt-title";
+          var tid = document.createElement("span");
+          tid.className = "tid";
+          tid.textContent = "Card #" + l.tokenId;
+          var tag = document.createElement("span");
+          tag.className = "tag";
+          tag.textContent = RARITY_NAMES[l.rarity] || "Common";
+          title.appendChild(tid);
+          title.appendChild(tag);
+          body.appendChild(title);
+          if (l.speed != null) {
+            var stats = document.createElement("div");
+            stats.className = "mkt-stats";
+            [["SPD", l.speed], ["LIVES", l.lives], ["LUCK", l.luck]].forEach(function (pair) {
+              var s = document.createElement("span");
+              s.textContent = pair[0] + " ";
+              var b = document.createElement("b");
+              b.textContent = String(pair[1]);
+              s.appendChild(b);
+              stats.appendChild(s);
+            });
+            body.appendChild(stats);
+          }
+          var price = document.createElement("div");
+          price.className = "mkt-price";
+          price.textContent = ethers.formatEther(l.price) + " ";
+          var psmall = document.createElement("small");
+          psmall.textContent = "Sepolia ETH";
+          price.appendChild(psmall);
+          body.appendChild(price);
+          var seller = document.createElement("p");
+          seller.className = "mkt-seller";
+          seller.textContent = "Seller ";
+          var smono = document.createElement("span");
+          smono.className = "mono";
+          smono.textContent = shortAddr(l.seller);
+          seller.appendChild(smono);
+          body.appendChild(seller);
+          var mine = walletAddr && l.seller.toLowerCase() === walletAddr.toLowerCase();
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "btn mkt-buy";
+          if (mine) {
+            btn.textContent = "Your listing";
+            btn.disabled = true;
+          } else {
+            btn.textContent = "Buy";
+            btn.addEventListener("click", function () { sfx.click(); buyMarketCard(l.tokenId, l.price, btn); });
+          }
+          body.appendChild(btn);
+          item.appendChild(body);
+          grid.appendChild(item);
+        });
+      }
+
+      async function buyMarketCard(tokenId, priceWei, btn) {
+        var blocked = cardBlockReason();
+        if (blocked) { setMktStatus(blocked, true); return; }
+        if (!walletAddr) { setMktStatus("Connect your wallet on Sepolia to buy — approve the connection in your wallet."); connectWallet(); return; }
+        if (!walletChainOk) { setMktStatus("Switch to Sepolia to buy — approve the network switch in your wallet."); switchToSepolia(); return; }
+        try {
+          if (btn) btn.disabled = true;
+          setMktStatus("Buying card #" + tokenId + " for " + ethers.formatEther(priceWei) + " Sepolia ETH… confirm in your wallet.");
+          var market = await marketWrite();
+          var tx = await market.buy(tokenId, { value: priceWei });
+          await tx.wait();
+          setMktStatus("Bought card #" + tokenId + "! It's in your wallet now — open “My Card” to see it.");
+          var tr = loadCardTracked(walletAddr);
+          saveCardTracked(walletAddr, { tokenId: tokenId, level: tr.level, xp: tr.xp });
+          loadMyCard();
+          refreshMarketplace();
+        } catch (e) {
+          setMktStatus("Buy failed: " + errText(e), true);
+          if (btn) btn.disabled = false;
+          refreshMarketplace();   // the listing may have changed under us
+        }
+      }
+
+      /* Recent Activity: the market's Listed / Bought / Cancelled
+         events via eth_getLogs, scanned backwards from the latest
+         block in chunks until ~20 events are found or the market's
+         deployment block is reached. Newest first; each event's time
+         comes from its block timestamp. */
+      async function loadMarketActivity() {
+        if (mktFeedLoading) return;
+        if (readBlockReason()) return;
+        mktFeedLoading = true;
+        var feed = el("mktFeed");
+        feed.innerHTML = "";
+        var loading = document.createElement("p");
+        loading.className = "mkt-note";
+        loading.textContent = "Loading activity…";
+        feed.appendChild(loading);
+        try {
+          var provider = sepoliaReadProvider();
+          var iface = new ethers.Interface(MARKET_ABI);
+          var topic0s = [
+            iface.getEvent("Listed").topicHash,
+            iface.getEvent("Bought").topicHash,
+            iface.getEvent("Cancelled").topicHash
+          ];
+          var latest = await provider.getBlockNumber();
+          var logs = [], end = latest, CHUNK = 20000;
+          while (end >= MARKET_DEPLOY_BLOCK && logs.length < 20) {
+            var start = Math.max(MARKET_DEPLOY_BLOCK, end - CHUNK + 1);
+            var part = await provider.getLogs({
+              address: MARKET_ADDRESS,
+              topics: [topic0s],
+              fromBlock: start,
+              toBlock: end
+            });
+            logs = part.concat(logs);
+            end = start - 1;
+          }
+          logs.sort(function (a, b) {
+            return (b.blockNumber - a.blockNumber) || (b.index - a.index);
+          });
+          var events = [];
+          for (var i = 0; i < logs.length && events.length < 20; i++) {
+            var parsed = null;
+            try { parsed = iface.parseLog({ topics: logs[i].topics, data: logs[i].data }); } catch (e) {}
+            if (!parsed) continue;
+            events.push({
+              type: parsed.name, blockNumber: logs[i].blockNumber, txHash: logs[i].transactionHash,
+              tokenId: Number(parsed.args.tokenId),
+              seller: parsed.args.seller,
+              buyer: parsed.name === "Bought" ? parsed.args.buyer : null,
+              price: parsed.name === "Cancelled" ? null : parsed.args.price
+            });
+          }
+          // Block timestamps for the time column (cached, ≤20 lookups).
+          var need = {};
+          events.forEach(function (ev) { if (mktBlockTimes[ev.blockNumber] == null) need[ev.blockNumber] = true; });
+          var nums = Object.keys(need).map(Number);
+          await Promise.all(nums.map(async function (n) {
+            try {
+              var blk = await provider.getBlock(n);
+              if (blk) mktBlockTimes[n] = Number(blk.timestamp);
+            } catch (e) {}
+          }));
+          renderMarketFeed(events);
+        } catch (e) {
+          feed.innerHTML = "";
+          var err = document.createElement("p");
+          err.className = "mkt-note";
+          err.textContent = "Couldn't load market activity from Sepolia: " + errText(e);
+          feed.appendChild(err);
+        } finally {
+          mktFeedLoading = false;
+        }
+      }
+
+      function renderMarketFeed(events) {
+        var feed = el("mktFeed");
+        feed.innerHTML = "";
+        if (!events.length) {
+          var empty = document.createElement("p");
+          empty.className = "mkt-note";
+          empty.textContent = "No market activity yet — listings, sales and cancellations on the v2 market will show up here.";
+          feed.appendChild(empty);
+          return;
+        }
+        events.forEach(function (ev) {
+          var row = document.createElement("div");
+          row.className = "mkt-ev";
+          var chip = document.createElement("span");
+          if (ev.type === "Bought") { chip.className = "chip"; chip.textContent = "Sold"; }
+          else if (ev.type === "Listed") { chip.className = "chip idle"; chip.textContent = "Listed"; }
+          else { chip.className = "chip plain"; chip.textContent = "Cancelled"; }
+          row.appendChild(chip);
+          var tid = document.createElement("span");
+          tid.className = "tid";
+          tid.textContent = "Card #" + ev.tokenId;
+          row.appendChild(tid);
+          if (ev.price != null) {
+            var price = document.createElement("span");
+            price.className = "price";
+            price.textContent = ethers.formatEther(ev.price) + " ETH";
+            row.appendChild(price);
+          }
+          var who = document.createElement("span");
+          who.className = "who";
+          who.textContent = ev.type === "Bought"
+            ? shortAddr(ev.seller) + " → " + shortAddr(ev.buyer)
+            : "seller " + shortAddr(ev.seller);
+          row.appendChild(who);
+          var ts = mktBlockTimes[ev.blockNumber];
+          var when = document.createElement("span");
+          when.className = "when";
+          when.textContent = ts ? new Date(ts * 1000).toLocaleString() : ("block " + fmtInt(ev.blockNumber));
+          row.appendChild(when);
+          if (ev.txHash) {
+            var link = document.createElement("a");
+            link.href = "https://sepolia.etherscan.io/tx/" + ev.txHash;
+            link.target = "_blank";
+            link.rel = "noopener";
+            link.textContent = "tx ↗";
+            row.appendChild(link);
+          }
+          feed.appendChild(row);
+        });
+      }
+
       el("heroMintBtn").addEventListener("click", function () { sfx.click(); mintCard(); });
       el("syncBtn").addEventListener("click", function () { sfx.click(); syncCardLevel(); });
       el("listBtn").addEventListener("click", function () { sfx.click(); listMyCard(); });
       el("cancelBtn").addEventListener("click", function () { sfx.click(); cancelMyListing(); });
       el("checkListingBtn").addEventListener("click", function () { sfx.click(); checkListing(); });
       el("buyBtn").addEventListener("click", function () { sfx.click(); buyListed(); });
+      el("mktRefreshBtn").addEventListener("click", function () { sfx.click(); refreshMarketplace(); });
+      el("browseMarketBtn").addEventListener("click", function () { sfx.click(); openModal("marketModal"); refreshMarketplace(); });
 
       function shortAddr(a) { return a.slice(0, 6) + "..." + a.slice(-4); }
       function dayStr(d) {
@@ -2610,6 +2973,7 @@
       el("genesisBtn").addEventListener("click", function () { sfx.click(); openModal("genesisModal"); });
       el("checkinOpenBtn").addEventListener("click", function () { sfx.click(); openModal("checkinModal"); refreshCheckinChain(); });
       el("cardBtn").addEventListener("click", function () { sfx.click(); openModal("cardModal"); refreshCardModal(); });
+      el("marketBtn").addEventListener("click", function () { sfx.click(); openModal("marketModal"); refreshMarketplace(); });
       el("heroSoundBtn").addEventListener("click", function () { toggleSound(); });
       document.querySelectorAll(".modal").forEach(function (m) {
         m.addEventListener("click", function (e) {
