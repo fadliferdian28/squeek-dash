@@ -320,8 +320,6 @@
       .ci-streak { text-align: center; }
       .ci-streak .n { font-family: "Oswald", sans-serif; font-size: 32px; font-weight: 600; line-height: 1; display: block; color: var(--gold); }
       .ci-streak .l { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--faint); }
-      .ci-bonus { margin: 14px 0 0; display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 12.5px; font-weight: 600; letter-spacing: .04em; border: 1.5px solid #2c7a4b; border-radius: 999px; padding: 5px 14px; background: rgba(62, 207, 122, .14); color: var(--green-ink); }
-      .ci-bonus[hidden] { display: none; }
       .ci-msg { margin: 12px 0 0; font-size: 14.5px; font-weight: 600; color: var(--cream); }
       .ci-msg:empty { display: none; }
       .ci-msg.err { color: #ff9d94; }
@@ -449,7 +447,7 @@
             <div class="hstat"><span class="hlabel">Best</span><span class="hval" id="hudBest">0</span></div>
             <div class="hstat"><span class="hlabel">Level</span><span class="hval" id="hudLevel">1</span></div>
             <div class="hstat"><span class="hlabel">Cheese</span><span class="hval" id="hudCheese">0/0</span></div>
-            <div class="hstat"><span class="hlabel">Lives</span><span class="lives" id="hudLives" aria-label="3 lives">♥♥♥</span></div>
+            <div class="hstat"><span class="hlabel">Lives</span><span class="lives" id="hudLives" aria-label="1 life">♥</span></div>
             <span class="boost" id="boostChip"><span class="bdot"></span><span id="boostText">Wheel idle · points ×1</span></span>
             <span class="spacer"></span>
             <button class="btn ghost" id="restartBtn" type="button">Restart run</button>
@@ -465,7 +463,7 @@
               <div class="ocard">
                 <button class="ocard-close" id="ovClose" type="button" aria-label="Close — back to the start screen" hidden>✕</button>
                 <h2 id="ovTitle">Ready to forage?</h2>
-                <p id="ovText">Collect every cheese in the maze, then reach the nest in the far corner. Beetles patrol the corridors — one touch costs a life, and you have three.</p>
+                <p id="ovText">Collect every cheese in the maze, then reach the nest in the far corner. Beetles patrol the corridors — one touch ends the run, and you have just one life a day.</p>
                 <p class="final" id="ovScore" hidden>0</p>
                 <span class="newbest" id="ovBest" hidden>New best!</span>
                 <div class="sum" id="ovSummary" hidden>
@@ -483,7 +481,7 @@
             <div class="keys-hint">
               <span><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> / <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</span>
               <span>Swipe the maze, or hold the D-pad</span>
-              <span>Cheese +50 · nest bonus +200 · beetle touch −1 life</span>
+              <span>Cheese +50 · nest bonus +200 · beetle touch ends the run · 1 life a day</span>
             </div>
             <div class="dpad" aria-label="Direction pad">
               <button class="dbtn up" type="button" data-dir="up" aria-label="Move up">↑</button>
@@ -513,7 +511,7 @@
               </div>
               <div class="li">
                 <span class="sw" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 20 20"><ellipse cx="10" cy="11" rx="6" ry="4.6" fill="#26262e"/><circle cx="15" cy="9" r="2.6" fill="#26262e"/><path d="M5 8 L2 5 M6 13 L2 15 M14 13 L17 16" stroke="#26262e" stroke-width="1.4"/></svg></span>
-                <p><b>Beetles.</b> Each one patrols a fixed route through the junctions and open stretches, marching back and forth without ever stopping — so the stretch it guards always opens up again. Watch its rhythm, wait for your gap, then slip through. One touch costs a life and sends you back to the maze entrance — lose all three lives and the run ends. Higher levels have more beetles, moving faster.</p>
+                <p><b>Beetles.</b> Each one patrols a fixed route through the junctions and open stretches, marching back and forth without ever stopping — so the stretch it guards always opens up again. Watch its rhythm, wait for your gap, then slip through. One touch ends the run on the spot — you have exactly one life per day, so watch its rhythm and time your crossing. Higher levels have more beetles, moving faster.</p>
               </div>
               <div class="li">
                 <span class="sw" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M3 17 V8 L10 3 L17 8 V17 H12 V12 H8 V17 Z" fill="#e8862a" stroke="#17171d" stroke-width="1.3"/></svg></span>
@@ -537,7 +535,7 @@
         <div class="how-controls">
           <span><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> / <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</span>
           <span>Swipe the maze, or hold the on-screen D-pad</span>
-          <span>Cheese +50 · nest bonus +200 · beetle touch −1 life · 3 lives per run</span>
+          <span>Cheese +50 · nest bonus +200 · beetle touch ends the run · 1 life per day</span>
         </div>
       </div>
     </div>
@@ -645,7 +643,6 @@
             <button class="btn big" id="checkinBtn" type="button">Check in today</button>
           </div>
         </div>
-        <p class="ci-bonus" id="ciBonus" hidden>Bonus ready: +1 extra life on your next run</p>
         <p class="ci-tx" id="ciTx" hidden>Last check-in confirmed on Sepolia: <a id="ciTxLink" href="#" target="_blank" rel="noopener">view transaction ↗</a></p>
         <p class="ci-msg" id="walletMsg" role="status"></p>
       </div>
@@ -656,7 +653,7 @@
       <div class="mbox">
         <button class="mclose" type="button" data-close aria-label="Close">✕</button>
         <h2>My Card</h2>
-        <p class="msub">Squeek Maze Cards (SQMC) — one free Sepolia NFT per wallet. Your card's Speed, Lives and Luck change how the maze plays, and clearing mazes earns it XP. Contracts are live on Sepolia: <a href="https://sepolia.etherscan.io/address/0x2bfEA82aea3B8bCA74234f0052d030f17156A293" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">SqueekMazeCard ↗</a> · <a href="https://sepolia.etherscan.io/address/0x08fB366197B7cc39d12A3CD74038A4E414f6fd70" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">Market ↗</a>. The game plays exactly the same with no card and no wallet.</p>
+        <p class="msub">Squeek Maze Cards (SQMC) — one free Sepolia NFT per wallet. Your card's Speed and Luck change how the maze plays, and clearing mazes earns it XP. Lives are the same for everyone — exactly 1 per run, card or no card — so levels climb slowly. Contracts are live on Sepolia: <a href="https://sepolia.etherscan.io/address/0x5381724fE3192595bE2394F90dd10F28bBFA7495" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">SqueekMazeCard v2 ↗</a> · <a href="https://sepolia.etherscan.io/address/0x9061A6C5C88Efe440DCF75E13582Eb4FB2ef6602" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">Market v2 ↗</a>. The game plays exactly the same with no card and no wallet.</p>
         <p class="card-msg" id="cardStatus" role="status"></p>
 
         <div class="card-sec" id="noCardSec" style="border-top:0; padding-top:0; margin-top:0">
@@ -674,17 +671,18 @@
             <div class="stat"><p class="label">Token ID</p><p class="value" id="cardTokenId">—</p></div>
             <div class="stat"><p class="label">Rarity</p><p class="value" id="cardRarity">—</p></div>
             <div class="stat"><p class="label">Speed</p><p class="value" id="cardSpeed">—</p></div>
-            <div class="stat"><p class="label">Lives</p><p class="value" id="cardLives">—</p></div>
+            <div class="stat"><p class="label">Lives · minted</p><p class="value" id="cardLives">—</p></div>
             <div class="stat"><p class="label">Luck</p><p class="value" id="cardLuck">—</p></div>
             <div class="stat"><p class="label">On-chain</p><p class="value" id="cardOnChain">—</p><p class="sub">Level / XP on Sepolia</p></div>
           </div>
-          <p id="cardFx">While this card is yours: it sets your run speed and starting lives, and its Luck boosts cheese and nest points.</p>
+          <p id="cardFx">While this card is yours: it sets your run speed, and its Luck boosts cheese and nest points. Every run starts with 1 life, whatever the card.</p>
         </div>
 
         <div class="card-sec">
           <p class="kicker">XP &amp; Sync Level</p>
           <p id="xpInfo">Clear a maze with a card connected to earn <strong>+50 XP</strong> per maze, tracked in this browser per wallet.</p>
-          <p class="sync-note">Sync Level can only be called by the contract owner or the game backend wallet (the contract's onlyOwnerOrGame rule). If your wallet is not the owner, this transaction will revert — your XP is still tracked locally in the game.</p>
+          <p>What Sync is for: a card's level only ever rises by playing — <strong>+50 XP per cleared maze</strong> — and with just <strong>1 life per day</strong> (reset 07:00 WIB) it rises slowly by design. Sync Level writes the level and XP you have earned onto your card on Sepolia, so the progress is stored on the NFT itself instead of only in this browser.</p>
+          <p class="sync-note">On the v2 card contract, the owner of a card can sync their own card: syncLevel allows the card's owner (you, for your own card), the contract owner, or the game wallet. Syncing a card you don't own reverts — your XP stays saved in the game either way.</p>
           <p class="card-msg err" id="syncWarn" hidden></p>
           <div class="card-row">
             <button class="btn" id="syncBtn" type="button" disabled>Sync Level</button>
@@ -1232,11 +1230,11 @@
 
       /* ---- game state ---- */
       var state = "ready";            // ready | play | dead (death pause) | clear | over
-      var level = 1, score = 0, lives = 3;
+      var level = 1, score = 0, lives = 1;
       var maze = null, mazeSeedBlock = null, usedLiveSeed = false;
       var player = { x: 0, y: 0, face: "right", moving: false };
       var cheeseGot = 0, runTime = 0, invuln = 0, hitTimer = 0, deathTimer = 0, lockedPing = 0;
-      var runElapsed = 0, runCheese = 0, lastRun = null, bonusLife = false;
+      var runElapsed = 0, runCheese = 0, lastRun = null;
       var parts = [], flashTxt = [];
       var held = {};                  // keyboard + dpad held directions
       var swipeDir = null;            // last swipe direction (persists until changed)
@@ -1260,10 +1258,10 @@
         el("hudLevel").textContent = String(level);
         el("hudCheese").textContent = cheeseGot + "/" + (maze ? maze.cheeses.length : 0);
         var h = "";
-        var totalHearts = Math.max(3, lives);
+        var totalHearts = Math.max(1, lives);
         for (var i = 0; i < totalHearts; i++) h += i < lives ? "♥" : '<span class="lost">♥</span>';
         el("hudLives").innerHTML = h;
-        el("hudLives").setAttribute("aria-label", lives + " lives");
+        el("hudLives").setAttribute("aria-label", lives + (lives === 1 ? " life" : " lives"));
       }
       function startCellCenter() { return { x: 1 * CELL + CELL / 2, y: 1 * CELL + CELL / 2 }; }
       function nestCenter() { return { x: (COLS - 2) * CELL + CELL / 2, y: (ROWS - 2) * CELL + CELL / 2 }; }
@@ -1314,11 +1312,13 @@
         // Lives lockout: a game over locks play until the 07:00 WIB reset.
         if (livesLockedOut()) { showLockout(); return; }
         level = 1; score = 0; runElapsed = 0; runCheese = 0;
-        // Card Lives mapping: an owned Squeek Maze Card sets the starting
-        // lives (its Lives stat is 3–5); with no card the run starts at 3,
-        // exactly as before. The daily check-in bonus still adds +1.
-        lives = (cardState.owned ? cardState.lives : 3) + (bonusLife ? 1 : 0);
-        if (bonusLife) { bonusLife = false; consumeCheckinBonus(); }
+        // Lives rule: exactly 1 life per run for everyone — with or
+        // without a card, and whatever Lives stat the card was minted
+        // with. One beetle touch ends the run, and the game-over lockout
+        // then holds play until the 07:00 WIB reset, so card levels can
+        // only climb slowly: XP comes solely from cleared mazes (+50 XP
+        // each), never from extra lives.
+        lives = 1;
         var seed = (live.ok && live.blockHeight != null) ? { block: live.blockHeight, live: true } : { block: mazeSeedBlock || 2000, live: usedLiveSeed };
         buildLevel(seed.block, seed.live);
         state = "play";
@@ -1352,7 +1352,7 @@
         lockLivesToday();   // nyawa habis — no more play until the 07:00 WIB reset
         var isBest = saveBest();
         showOverlay("Out of lives",
-          "The beetles win this round — Squeektoshi is fine, just very dizzy. That's the last of today's lives (<strong>nyawa habis</strong>): play unlocks again at the daily reset, <strong>tomorrow at 07:00 WIB</strong>. The maze from block <strong>#" + fmtInt(mazeSeedBlock) + "</strong> will still be here then.",
+          "The beetles win this round — Squeektoshi is fine, just very dizzy. That was your one life for today (<strong>nyawa habis</strong>): play unlocks again at the daily reset, <strong>tomorrow at 07:00 WIB</strong>. The maze from block <strong>#" + fmtInt(mazeSeedBlock) + "</strong> will still be here then.",
           "Back tomorrow", true, isBest);
         lastRun = { score: Math.floor(score), level: level, cheese: runCheese, time: runElapsed };
         el("sumTime").textContent = fmtTime(runElapsed);
@@ -1476,7 +1476,7 @@
         state = "ready";
         el("restartBtn").disabled = false;
         showOverlay("Ready to forage?",
-          "Collect every cheese in the maze, then reach the nest in the far corner. Beetles patrol the corridors — one touch costs a life, and you have three.",
+          "Collect every cheese in the maze, then reach the nest in the far corner. Beetles patrol the corridors — one touch ends the run, and you have just one life a day.",
           "Enter the maze", false, false);
       });
       el("restartBtn").addEventListener("click", function () {
@@ -1775,21 +1775,26 @@
          DailyCheckin contract (0x5d222D…421ECF): the day + streak are
          recorded on-chain, keyed by UTC day — and 00:00 UTC is exactly
          the game's 07:00 WIB daily reset. A local record is kept only
-         as a cache and to carry the +1-life bonus flag.
+         as a cache.
          ===================================================================== */
       var SEPOLIA_HEX = "0xaa36a7";   // 11155111
       var walletAddr = null, walletChainOk = false;
 
-      // ===== SQUEEK MAZE CARDS (Sepolia NFT) =====
+      // ===== SQUEEK MAZE CARDS v2 (Sepolia NFT) =====
       // Deployed on Sepolia (chainId 11155111) and live:
-      // SqueekMazeCard (SQMC) — https://sepolia.etherscan.io/address/0x2bfEA82aea3B8bCA74234f0052d030f17156A293
-      // SqueekMazeMarket — https://sepolia.etherscan.io/address/0x08fB366197B7cc39d12A3CD74038A4E414f6fd70
+      // SqueekMazeCardV2 (SQMC) — https://sepolia.etherscan.io/address/0x5381724fE3192595bE2394F90dd10F28bBFA7495
+      // SqueekMazeMarket v2 — https://sepolia.etherscan.io/address/0x9061A6C5C88Efe440DCF75E13582Eb4FB2ef6602
+      // v2 fixes sync for players: syncLevel allows the contract owner,
+      // the gameAddress, OR the owner of that specific tokenId — so a
+      // minter can sync their own card. Card baseURI is
+      // https://fadliferdian28.github.io/squeek-dash/cards-v2/ (tokenURI
+      // returns that path, and metadata fetches follow it).
       // Minting and the marketplace are LIVE. The zero-address guard in
       // cardBlockReason() stays as a safety net: if an address were ever
       // reset to 0x000...0, the card/market features would go inert
       // instead of calling the zero address.
-      const CARD_ADDRESS = "0x2bfEA82aea3B8bCA74234f0052d030f17156A293";
-      const MARKET_ADDRESS = "0x08fB366197B7cc39d12A3CD74038A4E414f6fd70";
+      const CARD_ADDRESS = "0x5381724fE3192595bE2394F90dd10F28bBFA7495";
+      const MARKET_ADDRESS = "0x9061A6C5C88Efe440DCF75E13582Eb4FB2ef6602";
       // DailyCheckin — deployed on Sepolia, permissionless, no owner:
       // https://sepolia.etherscan.io/address/0x5d222D54c7605fF68eF555456C51441369421ECF
       const CHECKIN_ADDRESS = "0x5d222D54c7605fF68eF555456C51441369421ECF";
@@ -1962,7 +1967,7 @@
           el("cardLuck").textContent = String(cardState.luck);
           el("cardOnChain").textContent = "Lv " + cardState.onChainLevel + " · " + fmtInt(cardState.onChainXp) + " XP";
           el("cardFx").textContent = "While this card is yours: run speed ×" + cardSpeedMult().toFixed(2) +
-            ", cheese & nest points ×" + cardLuckMult().toFixed(2) + " (Luck), and " + cardState.lives + " starting lives per run.";
+            ", cheese & nest points ×" + cardLuckMult().toFixed(2) + " (Luck). Lives are fixed at 1 per run for everyone — this card's minted Lives stat (" + cardState.lives + ") no longer adds extra lives, so levels rise slowly.";
           el("xpInfo").innerHTML = "Game-tracked: <strong>Level " + cardState.level + " · " + fmtInt(cardState.xp) + " XP</strong>" +
             " — on-chain: <strong>Level " + cardState.onChainLevel + " · " + fmtInt(cardState.onChainXp) + " XP</strong>." +
             " Clearing a maze earns <strong>+50 XP</strong>, tracked here first; Sync Level writes it to Sepolia.";
@@ -2137,11 +2142,18 @@
           var read = cardRead();
           var ownerAddr = await read.owner();
           var gameAddr = await read.gameAddress();
+          var tokenOwner = null;
+          try { tokenOwner = await read.ownerOf(cardState.tokenId); } catch (eO) { tokenOwner = null; }
           var me = walletAddr.toLowerCase();
           var warn = el("syncWarn");
-          if (ownerAddr.toLowerCase() !== me && gameAddr.toLowerCase() !== me) {
+          // v2 rule: syncLevel is allowed for the contract owner, the
+          // gameAddress, or the owner of this specific tokenId — so a
+          // player who owns the card can sync it themselves.
+          var canSync = ownerAddr.toLowerCase() === me || gameAddr.toLowerCase() === me ||
+            (tokenOwner && tokenOwner.toLowerCase() === me);
+          if (!canSync) {
             warn.hidden = false;
-            warn.textContent = "Heads up: your wallet is neither the contract owner nor the game backend wallet, so this Sync Level transaction will most likely revert (onlyOwnerOrGame). Your XP stays tracked locally in the game either way — you can still try it:";
+            warn.textContent = "Heads up: this wallet doesn't own card #" + cardState.tokenId + " — only the card's owner (or the contract owner / game wallet) can sync it, so this transaction will most likely revert. Your XP stays tracked locally in the game either way — you can still try it:";
           } else {
             warn.hidden = true;
           }
@@ -2278,7 +2290,7 @@
           // Migrate pre-on-chain records: they stored `last` as a local
           // date string ("YYYY-MM-DD") instead of a UTC day number.
           // Convert it (a date-only string parses as UTC midnight) so an
-          // existing streak/bonus is never wiped by the switch.
+          // existing streak is never wiped by the switch.
           if (rec && rec.lastDay == null && rec.last) {
             var p = Date.parse(rec.last);
             if (!isNaN(p)) rec.lastDay = Math.floor(p / 86400000);
@@ -2293,7 +2305,7 @@
          DailyCheckin contract: {lastDay, streak, canCheckIn} or null
          when not read yet / unreachable. The contract is the source of
          truth for "checked in today" and the streak number; the local
-         record only caches it and carries the +1-life bonus flag. */
+         record only caches it. */
       var ciChain = null, ciChainLoading = false;
       async function refreshCheckinChain() {
         if (!walletAddr || ciChainLoading) return;
@@ -2311,17 +2323,16 @@
         }
       }
       /* Record today's check-in in the local cache after it is confirmed
-         on-chain. The +1-life bonus is granted only the first time today
-         is recorded locally, so re-opening the modal can't re-grant it. */
+         on-chain. Check-in grants no extra life: everyone plays with
+         exactly 1 life per day, check-in or not. */
       function markLocalChecked(streak, txHash) {
         if (!walletAddr) return;
         var today = utcDayNumber();
-        var rec = loadCheckin(walletAddr) || { lastDay: 0, streak: 0, bonus: false };
-        if (Number(rec.lastDay) !== today) { rec.lastDay = today; rec.bonus = true; }
+        var rec = loadCheckin(walletAddr) || { lastDay: 0, streak: 0 };
+        if (Number(rec.lastDay) !== today) rec.lastDay = today;
         rec.streak = streak;
         if (txHash) rec.tx = txHash;
         saveCheckin(walletAddr, rec);
-        if (rec.bonus) bonusLife = true;
       }
       function showCiTx(hash) {
         var wrap = el("ciTx"), link = el("ciTxLink");
@@ -2366,16 +2377,9 @@
       function showLockout() {
         state = "over";
         showOverlay("Nyawa habis — out of lives",
-          "You've used up all your lives for today. Squeektoshi needs to rest — play unlocks again at the daily reset, <strong>tomorrow at 07:00 WIB</strong>. Your best score is safe until then.",
+          "You've used your one life for today. Squeektoshi needs to rest — play unlocks again at the daily reset, <strong>tomorrow at 07:00 WIB</strong>. Your best score is safe until then.",
           "Back tomorrow", false, false);
         el("restartBtn").disabled = true;
-      }
-      function consumeCheckinBonus() {
-        if (walletAddr) {
-          var rec = loadCheckin(walletAddr);
-          if (rec && rec.bonus) { rec.bonus = false; saveCheckin(walletAddr, rec); }
-        }
-        renderCheckin();
       }
       function renderWallet() {
         el("walletBtn").textContent = walletAddr ? shortAddr(walletAddr) : "Connect wallet";
@@ -2383,7 +2387,7 @@
       }
       function renderCheckin() {
         renderWallet();
-        var btn = el("checkinBtn"), streakEl = el("ciStreak"), bonusEl = el("ciBonus");
+        var btn = el("checkinBtn"), streakEl = el("ciStreak");
         var rec = walletAddr ? loadCheckin(walletAddr) : null;
         var today = utcDayNumber();
         // Keep the "view transaction" link for today's confirmed check-in.
@@ -2400,17 +2404,12 @@
         if (!walletAddr) {
           btn.disabled = false;
           btn.textContent = "Connect wallet to check in";
-          bonusEl.hidden = true;
         } else if (checked) {
           btn.disabled = true;
           btn.textContent = "Checked in today ✓ (on-chain)";
-          bonusEl.hidden = !(rec && rec.bonus);
-          if (rec && rec.bonus) bonusLife = true;
         } else {
           btn.disabled = false;
           btn.textContent = "Check in today";
-          bonusEl.hidden = !(rec && rec.bonus);
-          if (rec && rec.bonus) bonusLife = true;
         }
       }
       function refreshChain() {
@@ -2476,7 +2475,7 @@
          contract on Sepolia. Reads (canCheckIn / getCheckin) go through
          the public RPCs; the write goes through the wallet signer. The
          local record is updated only after the tx confirms, and only
-         as a cache + bonus carrier — the streak shown is the chain's. */
+         as a cache — the streak shown is the chain's. */
       async function doCheckin() {
         if (!walletAddr) { setWalletMsg("Connect your wallet first — then you can check in."); connectWallet(); return; }
         if (!walletChainOk) { setWalletMsg("You're not on Sepolia — switch to Sepolia (chain ID 11155111) to check in.", true); switchToSepolia(); return; }
@@ -2516,7 +2515,7 @@
           ciChain = { lastDay: utcDayNumber(), streak: newStreak, canCheckIn: false };
           markLocalChecked(newStreak, tx.hash);
           showCiTx(tx.hash);
-          setWalletMsg("Checked in on Sepolia! Streak: " + newStreak + (newStreak === 1 ? " day" : " days") + ". Bonus ready: +1 extra life on your next run.");
+          setWalletMsg("Checked in on Sepolia! Streak: " + newStreak + (newStreak === 1 ? " day" : " days") + ". Come back after the 07:00 WIB reset to keep it going.");
         } catch (e) {
           var t = errText(e);
           if (/already checked in/i.test(t)) {
