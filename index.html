@@ -129,6 +129,14 @@
       .pbtn.gold:hover { background: linear-gradient(180deg, #ffe082, #ffd34d 55%, var(--gold-deep)); }
       .pbtn.dark { background: #22103f; color: var(--cream); }
       .pbtn.dark:hover { background: #2e1854; }
+      .pbtn.mint { background: linear-gradient(180deg, #63ec96, var(--green) 55%, #28a85c); color: #07280f; }
+      .pbtn.mint:hover { background: linear-gradient(180deg, #7df2a8, #4fe184 55%, #31ba68); }
+      .hero-mint-status {
+        margin: -4px auto 22px; max-width: 560px; font-size: 14.5px; font-weight: 600;
+        color: var(--cream); text-shadow: 0 2px 10px rgba(20, 5, 40, .65);
+      }
+      .hero-mint-status:empty { display: none; }
+      .hero-mint-status.err { color: #ffb3ab; }
       .hero-links { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
       .mbtn {
         font-weight: 700; font-size: 12.5px; letter-spacing: .12em; text-transform: uppercase;
@@ -389,8 +397,10 @@
           <p class="hero-desc">Guide Squeektoshi through the maze, collect every last cheese, and reach the nest — dodging the patrolling beetles. The real hamster wheel sets their pace, and while it runs, your points double.</p>
           <div class="hero-cta">
             <button class="pbtn gold" id="playBtn" type="button">▶ Play</button>
+            <button class="pbtn mint" id="heroMintBtn" type="button">Free Mint</button>
             <button class="pbtn dark" id="howBtn" type="button">How to play</button>
           </div>
+          <p class="hero-mint-status" id="heroMintStatus" role="status">Loading free-mint status…</p>
           <div class="hero-links">
             <button class="mbtn" id="liveBtn" type="button">Live feed</button>
             <button class="mbtn" id="genesisBtn" type="button">My Genesis run</button>
@@ -629,12 +639,9 @@
         <p class="msub">Squeek Maze Cards (SQMC) — one free Sepolia NFT per wallet. Your card's Speed, Lives and Luck change how the maze plays, and clearing mazes earns it XP. Contracts are live on Sepolia: <a href="https://sepolia.etherscan.io/address/0x2bfEA82aea3B8bCA74234f0052d030f17156A293" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">SqueekMazeCard ↗</a> · <a href="https://sepolia.etherscan.io/address/0x08fB366197B7cc39d12A3CD74038A4E414f6fd70" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">Market ↗</a>. The game plays exactly the same with no card and no wallet.</p>
         <p class="card-msg" id="cardStatus" role="status"></p>
 
-        <div class="card-sec" style="border-top:0; padding-top:0; margin-top:0">
-          <p class="kicker">Mint · free · 1 per wallet</p>
-          <p id="mintInfo">Connect wallet (Sepolia) to mint.</p>
-          <div class="card-row">
-            <button class="btn big" id="mintBtn" type="button" disabled>Mint Free Card</button>
-          </div>
+        <div class="card-sec" id="noCardSec" style="border-top:0; padding-top:0; margin-top:0">
+          <p class="kicker">Your card</p>
+          <p id="noCardMsg">You don't have a Squeek Maze Card yet. Mint yours free from the <strong>Free Mint</strong> button on the home page — 1 per wallet, free on Sepolia (gas only). Once minted, your card and its stats show up here.</p>
         </div>
 
         <div class="card-sec" id="ownedSec" hidden>
@@ -1758,10 +1765,22 @@
       // Card Luck mapping: luckMult = 1.0 + (luck-10)/90*0.5 (Luck 10 → 1.0x, Luck 100 → 1.5x).
       function cardLuckMult() { if (!cardState.owned) return 1; return 1.0 + (cardState.luck - 10) / 90 * 0.5; }
 
-      function cardBlockReason() {
+      /* Reads never touch the wallet: they go to public Sepolia RPCs, so
+         card/mint info renders correctly even with no wallet connected or
+         the wallet sitting on another chain. (Reading through the wallet's
+         BrowserProvider was the old bug: on BSC/mainnet the Sepolia
+         contract addresses have no code, eth_call returns 0x, and ethers
+         throws "could not decode result data".) Only WRITES use the
+         wallet signer, gated by cardBlockReason(). */
+      function readBlockReason() {
         if (typeof window.ethers === "undefined") return "ethers.js failed to load — card features unavailable";
         if (CARD_ADDRESS === ZERO_ADDR || MARKET_ADDRESS === ZERO_ADDR) return "Card contracts not deployed yet — minting and market unlock after deployment";
-        if (!window.ethereum) return "No browser wallet found — card features need a wallet like MetaMask. The game itself plays fine without one.";
+        return null;
+      }
+      function cardBlockReason() {
+        var r = readBlockReason();
+        if (r) return r;
+        if (!window.ethereum) return "No browser wallet found — viewing cards works without one, but minting, syncing and trading need a wallet like MetaMask. The game itself plays fine without one.";
         return null;
       }
       function errText(e) {
@@ -1778,13 +1797,48 @@
         m.textContent = txt || "";
         m.className = "card-msg" + (isErr ? " err" : "");
       }
+      /* Mint feedback lives on the hero now (the Free Mint button moved
+         there); it also mirrors into the My Card modal's status line. */
+      function setMintStatus(txt, isErr) {
+        var h = el("heroMintStatus");
+        if (h) { h.textContent = txt || ""; h.className = "hero-mint-status" + (isErr ? " err" : ""); }
+        setCardStatus(txt, isErr);
+      }
+      function renderHeroMint() {
+        var h = el("heroMintStatus");
+        if (!h) return;
+        var txt = "";
+        if (cardTotalMinted != null) txt += "Cards minted: " + fmtInt(cardTotalMinted) + " / 10,000 · ";
+        if (!window.ethereum) txt += "Connect a wallet on Sepolia to mint your free card.";
+        else if (!walletAddr) txt += "Connect wallet (Sepolia) to mint your free card.";
+        else if (!walletChainOk) txt += "Wallet connected — switch to Sepolia to mint your free card.";
+        else if (cardHasMinted) txt += "Already minted — your card is in “My Card”.";
+        else if (cardHasMinted === false) txt += "Your free card is waiting — 1 per wallet, gas only.";
+        else txt += "Checking your mint status…";
+        h.textContent = txt;
+        h.className = "hero-mint-status";
+        var b = el("heroMintBtn");
+        if (b) b.textContent = cardHasMinted ? "View My Card" : "Free Mint";
+      }
+      var SEPOLIA_RPC_URLS = [
+        "https://ethereum-sepolia-rpc.publicnode.com",
+        "https://eth-sepolia.api.onfinality.io/public",
+        "https://1rpc.io/sepolia"
+      ];
+      var _sepoliaReadProvider = null;
+      function sepoliaReadProvider() {
+        if (_sepoliaReadProvider) return _sepoliaReadProvider;
+        var providers = SEPOLIA_RPC_URLS.map(function (u) {
+          return new ethers.JsonRpcProvider(u, 11155111, { staticNetwork: true });
+        });
+        _sepoliaReadProvider = new ethers.FallbackProvider(providers, 11155111, { quorum: 1 });
+        return _sepoliaReadProvider;
+      }
       function cardRead() {
-        var p = new ethers.BrowserProvider(window.ethereum);
-        return new ethers.Contract(CARD_ADDRESS, CARD_ABI, p);
+        return new ethers.Contract(CARD_ADDRESS, CARD_ABI, sepoliaReadProvider());
       }
       function marketRead() {
-        var p = new ethers.BrowserProvider(window.ethereum);
-        return new ethers.Contract(MARKET_ADDRESS, MARKET_ABI, p);
+        return new ethers.Contract(MARKET_ADDRESS, MARKET_ABI, sepoliaReadProvider());
       }
       async function cardWrite() {
         var p = new ethers.BrowserProvider(window.ethereum);
@@ -1826,16 +1880,9 @@
       function renderCardModal() {
         var blocked = !!cardBlockedMsg;
         var canAct = !!walletAddr && walletChainOk && !blocked;
-        // --- mint section ---
-        var mintTxt = "";
-        if (cardTotalMinted != null) mintTxt += "Minted so far: " + fmtInt(cardTotalMinted) + " / 10,000. ";
-        if (!walletAddr) mintTxt += "Connect wallet (Sepolia) to mint.";
-        else if (!walletChainOk) mintTxt += "Wallet connected, but not on Sepolia — switch to Sepolia (chain ID 11155111) to mint.";
-        else if (cardHasMinted) mintTxt += "Already minted — one free card per wallet.";
-        else if (cardHasMinted === false) mintTxt += "Your wallet hasn't minted yet — your free card is waiting.";
-        el("mintInfo").textContent = mintTxt;
-        el("mintBtn").disabled = !(canAct && cardHasMinted === false);
-        // --- owned card ---
+        renderHeroMint();
+        // --- owned card (minting lives on the hero, not in this modal) ---
+        el("noCardSec").hidden = cardState.owned;
         el("ownedSec").hidden = !cardState.owned;
         if (cardState.owned) {
           el("cardTokenId").textContent = "#" + cardState.tokenId;
@@ -1854,27 +1901,28 @@
         // --- marketplace ---
         el("listBtn").disabled = !(canAct && cardState.owned);
         el("cancelBtn").disabled = !(canAct && cardState.owned);
-        el("checkListingBtn").disabled = !canAct;
+        el("checkListingBtn").disabled = blocked;   // reading a listing needs no wallet — it goes through the Sepolia RPC
       }
       async function fetchMintInfo() {
-        if (cardBlockReason()) return;
+        if (readBlockReason()) return;
         try {
           var card = cardRead();
           cardTotalMinted = Number(await card.totalMinted());
           if (walletAddr) cardHasMinted = await card.hasMinted(walletAddr);
+          else cardHasMinted = null;
           renderCardModal();
         } catch (e) {
-          setCardStatus("Couldn't reach the card contract: " + errText(e), true);
+          setMintStatus("Couldn't reach the card contract on Sepolia: " + errText(e), true);
         }
       }
       function refreshCardModal() {
-        cardBlockedMsg = cardBlockReason();
+        cardBlockedMsg = readBlockReason();
         renderCardModal();
         if (cardBlockedMsg) { setCardStatus(cardBlockedMsg, true); return; }
         setCardStatus("");
+        if (walletAddr && !walletChainOk) setCardStatus("Wallet connected, but not on Sepolia — your card is read from the Sepolia chain either way; switch to Sepolia to Sync Level or use the marketplace.");
         fetchMintInfo();
-        if (walletAddr && walletChainOk) loadMyCard();
-        else if (walletAddr && !walletChainOk) setCardStatus("Wallet connected, but not on Sepolia — switch to Sepolia to use your card.", true);
+        if (walletAddr) loadMyCard();
       }
 
       /* Load the connected wallet's card: the stored tokenId first
@@ -1882,8 +1930,8 @@
          the contract is plain ERC-721 (no tokenOfOwnerByIndex). */
       async function loadMyCard() {
         if (cardLoading) return;
-        if (!walletAddr || !walletChainOk) return;
-        if (cardBlockReason()) return;
+        if (!walletAddr) return;
+        if (readBlockReason()) return;
         cardLoading = true;
         try {
           var card = cardRead();
@@ -1942,15 +1990,17 @@
 
       async function mintCard() {
         var blocked = cardBlockReason();
-        if (blocked) { setCardStatus(blocked, true); return; }
-        if (!walletAddr) { setCardStatus("Connect wallet (Sepolia) to mint.", true); connectWallet(); return; }
-        if (!walletChainOk) { setCardStatus("Switch to Sepolia to mint.", true); switchToSepolia(); return; }
+        if (blocked) { setMintStatus(blocked, true); return; }
+        if (cardHasMinted) { openModal("cardModal"); refreshCardModal(); return; }
+        if (!walletAddr) { setMintStatus("Connect wallet (Sepolia) to mint — approve the connection in your wallet."); connectWallet(); return; }
+        if (!walletChainOk) { setMintStatus("Switch to Sepolia to mint — approve the network switch in your wallet."); switchToSepolia(); return; }
+        var btn = el("heroMintBtn");
         try {
-          el("mintBtn").disabled = true;
-          setCardStatus("Minting… confirm the free mint in your wallet (gas only, on Sepolia).");
+          if (btn) btn.disabled = true;
+          setMintStatus("Minting… confirm the free mint in your wallet (gas only, on Sepolia).");
           var card = await cardWrite();
           var tx = await card.mint();
-          setCardStatus("Minting… transaction sent, waiting for confirmation.");
+          setMintStatus("Minting… transaction sent, waiting for confirmation.");
           var receipt = await tx.wait();
           var newId = null;
           for (var i = 0; i < receipt.logs.length; i++) {
@@ -1962,15 +2012,17 @@
           if (newId != null) {
             var tr = loadCardTracked(walletAddr);
             saveCardTracked(walletAddr, { tokenId: Number(newId), level: tr.level, xp: tr.xp });
-            setCardStatus("Minted! Your Squeek Maze Card is token #" + newId.toString() + " — loading it now…");
+            setMintStatus("Minted! Your Squeek Maze Card is token #" + newId.toString() + " — find it under “My Card”.");
           } else {
-            setCardStatus("Minted! Loading your card…");
+            setMintStatus("Minted! Find your card under “My Card”.");
           }
           cardHasMinted = true;
           fetchMintInfo();
           loadMyCard();
         } catch (e) {
-          setCardStatus("Mint failed: " + errText(e), true);
+          setMintStatus("Mint failed: " + errText(e), true);
+        } finally {
+          if (btn) btn.disabled = false;
           renderCardModal();
         }
       }
@@ -2033,7 +2085,7 @@
         }
       }
       async function checkListing() {
-        var blocked = cardBlockReason();
+        var blocked = readBlockReason();
         if (blocked) { setMarketStatus(blocked, true); return; }
         var tid = parseInt(el("buyTokenId").value.trim(), 10);
         if (isNaN(tid) || tid < 0) { setMarketStatus("Enter a token ID to check.", true); return; }
@@ -2100,7 +2152,7 @@
           setMarketStatus("Cancel failed: " + errText(e), true);
         }
       }
-      el("mintBtn").addEventListener("click", function () { sfx.click(); mintCard(); });
+      el("heroMintBtn").addEventListener("click", function () { sfx.click(); mintCard(); });
       el("syncBtn").addEventListener("click", function () { sfx.click(); syncCardLevel(); });
       el("listBtn").addEventListener("click", function () { sfx.click(); listMyCard(); });
       el("cancelBtn").addEventListener("click", function () { sfx.click(); cancelMyListing(); });
@@ -2161,7 +2213,8 @@
         window.ethereum.request({ method: "eth_chainId" }).then(function (id) {
           walletChainOk = String(id).toLowerCase() === SEPOLIA_HEX;
           renderCheckin();
-          if (walletAddr && walletChainOk) loadMyCard();
+          fetchMintInfo();
+          if (walletAddr) loadMyCard();
         }).catch(function () { walletChainOk = false; renderCheckin(); });
       }
       function switchToSepolia() {
@@ -2199,12 +2252,13 @@
           .then(function (id) {
             walletChainOk = String(id).toLowerCase() === SEPOLIA_HEX;
             renderCheckin();
+            fetchMintInfo();
+            loadMyCard();
             if (!walletChainOk) {
               setWalletMsg("Wallet connected, but it's not on Sepolia — switching you to Sepolia (chain ID 11155111)…", true);
               switchToSepolia();
             } else {
               setWalletMsg("Wallet connected on Sepolia. Hit “Check in today” to start your streak.");
-              loadMyCard();
             }
           })
           .catch(function () {
@@ -2229,7 +2283,7 @@
       el("walletBtn").addEventListener("click", function () {
         if (walletAddr) {
           walletAddr = null; walletChainOk = false;
-          resetCardState(); cardHasMinted = null; cardTotalMinted = null; renderCardModal();
+          resetCardState(); cardHasMinted = null; cardTotalMinted = null; renderCardModal(); fetchMintInfo();
           setWalletMsg("Wallet disconnected here. The game plays on — reconnect any time to check in.");
           renderCheckin();
         } else connectWallet();
@@ -2320,6 +2374,8 @@
       renderLive();
       renderHud();
       initWallet();
+      renderHeroMint();
+      fetchMintInfo();
       fetchStatus();
       requestAnimationFrame(frame);
     </script>
