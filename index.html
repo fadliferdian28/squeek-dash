@@ -398,6 +398,26 @@
       .mkt-ev .who { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; }
       .mkt-ev .when { margin-left: auto; color: var(--faint); font-size: 12.5px; white-space: nowrap; }
       .mkt-ev a { color: var(--gold-deep); white-space: nowrap; }
+      /* primary sale: unminted supply, bought straight from the card contract */
+      .primary-sale { border-bottom: 1.5px dashed var(--line); padding-bottom: 18px; margin-bottom: 18px; }
+      .primary-note { font-size: 14.5px; color: var(--soft); margin: 0 0 12px; }
+      .primary-note a { color: var(--gold); text-decoration: underline; text-underline-offset: 3px; }
+      .primary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      .primary-card { background: var(--panel); border: 1.5px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+      .primary-count { margin: 0; font-size: 14px; color: var(--soft); }
+      .primary-count strong { color: var(--cream); }
+      .primary-sub { margin: 0; font-size: 13px; color: var(--faint); }
+      .primary-btn { margin-top: auto; width: 100%; }
+      .btn.free { background: linear-gradient(180deg, #63ec96, var(--green) 55%, #28a85c); color: #07280f; }
+      .btn.paidbuy { background: linear-gradient(180deg, #8fe3f7, #35c4e8 55%, #1d9bc4); color: #062a38; }
+      @media (max-width: 560px) { .primary-grid { grid-template-columns: 1fr; } }
+      /* sell your card: list your own card without leaving the Marketplace */
+      .sell-sale { border-bottom: 1.5px dashed var(--line); padding-bottom: 18px; margin-bottom: 18px; }
+      .sell-sale p { font-size: 14.5px; color: var(--soft); margin: 0 0 10px; }
+      .sell-sale p strong { color: var(--cream); }
+      .sell-sale a { color: var(--gold); text-decoration: underline; text-underline-offset: 3px; }
+      select.txt-in { width: auto; min-width: 132px; cursor: pointer; }
+      select.txt-in option { background: var(--panel); color: var(--cream); }
 
       @media (max-width: 860px) {
         .live-grid { grid-template-columns: 1fr 1fr; }
@@ -451,7 +471,6 @@
           <div class="hero-cta">
             <button class="pbtn gold" id="playBtn" type="button">▶ Play</button>
             <button class="pbtn mint" id="heroMintBtn" type="button">Free Mint</button>
-            <button class="pbtn paid" id="heroPaidMintBtn" type="button" hidden>Mint (0.5 ETH)</button>
             <button class="pbtn dark" id="howBtn" type="button">How to play</button>
           </div>
           <p class="hero-mint-status" id="heroMintStatus" role="status">Loading mint status…</p>
@@ -462,7 +481,6 @@
             <button class="mbtn" id="checkinOpenBtn" type="button">Daily check-in</button>
             <button class="mbtn" id="cardBtn" type="button">My Card</button>
             <button class="mbtn" id="marketBtn" type="button">Marketplace</button>
-            <button class="mbtn" id="heroSoundBtn" type="button" aria-pressed="true">♪ Music: on</button>
           </div>
         </div>
       </section>
@@ -621,46 +639,17 @@
       <div class="mbox">
         <button class="mclose" type="button" data-close aria-label="Close">✕</button>
         <h2>My Genesis run</h2>
-        <p class="msub">The builder's own tracked progress — kept by hand, <strong>not</strong> live API data.</p>
-        <div class="genesis-grid">
-          <div>
-            <p class="kicker">Genesis cards claimed</p>
-            <div class="nft-row">
-              <div class="nft approved">
-                <div class="face" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="16" r="8" fill="#e8862a"/><circle cx="9.5" cy="9" r="4" fill="#e8862a"/><circle cx="20.5" cy="9" r="4" fill="#e8862a"/><circle cx="12.8" cy="15" r="1.4" fill="#17171d"/><circle cx="17.2" cy="15" r="1.4" fill="#17171d"/><ellipse cx="15" cy="18.6" rx="2.2" ry="1.5" fill="#17171d"/></svg></div>
-                <div class="num">#3749</div>
-              </div>
-              <div class="nft">
-                <div class="face" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="16" r="8" fill="#e8862a"/><circle cx="9.5" cy="9" r="4" fill="#e8862a"/><circle cx="20.5" cy="9" r="4" fill="#e8862a"/><circle cx="12.8" cy="15" r="1.4" fill="#17171d"/><circle cx="17.2" cy="15" r="1.4" fill="#17171d"/><ellipse cx="15" cy="18.6" rx="2.2" ry="1.5" fill="#17171d"/></svg></div>
-                <div class="num">#3750</div>
-              </div>
-              <div class="nft">
-                <div class="face" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="16" r="8" fill="#e8862a"/><circle cx="9.5" cy="9" r="4" fill="#e8862a"/><circle cx="20.5" cy="9" r="4" fill="#e8862a"/><circle cx="12.8" cy="15" r="1.4" fill="#17171d"/><circle cx="17.2" cy="15" r="1.4" fill="#17171d"/><ellipse cx="15" cy="18.6" rx="2.2" ry="1.5" fill="#17171d"/></svg></div>
-                <div class="num">#3751</div>
-              </div>
-              <div class="nft">
-                <div class="face" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="16" r="8" fill="#e8862a"/><circle cx="9.5" cy="9" r="4" fill="#e8862a"/><circle cx="20.5" cy="9" r="4" fill="#e8862a"/><circle cx="12.8" cy="15" r="1.4" fill="#17171d"/><circle cx="17.2" cy="15" r="1.4" fill="#17171d"/><ellipse cx="15" cy="18.6" rx="2.2" ry="1.5" fill="#17171d"/></svg></div>
-                <div class="num">#3752</div>
-              </div>
-            </div>
-            <p style="margin:12px 0 0; font-size:14px; color:var(--soft)">
-              Four cards, claimed free on Sepolia. <strong style="color:var(--cream)">#3749 is approved for deposit</strong> — the green one.
-              <span class="tag">Public claim sold out · 8,888 / 8,888</span>
-            </p>
-          </div>
-          <div>
-            <p class="kicker">Aura · Silver tier</p>
-            <p style="font-family:'Oswald',sans-serif; font-size:40px; font-weight:600; line-height:1; margin:0; color:var(--cream)">405 <small style="font-size:16px; color:var(--soft); font-weight:500">AURA</small></p>
-            <div class="bar gold" role="img" aria-label="405 of 871 Aura needed for the Gold tier, 46.5 percent"><i style="width:46.5%"></i></div>
-            <p style="font-size:14px; color:var(--soft); margin:8px 0 16px">466 more Aura to reach <strong style="color:var(--cream)">Gold</strong> at 871.</p>
-            <p class="kicker" style="margin-bottom:6px">My referral code</p>
-            <div class="refbox">
-              <code id="refCode">f5vknnhk</code>
-              <span style="flex:1"></span>
-              <button class="btn" id="copyBtn" type="button">Copy code</button>
-              <a class="btn ghost" href="https://squeekchain.com/genesis" target="_blank" rel="noopener">Open Genesis ↗</a>
-            </div>
-          </div>
+        <p class="msub">Your own Squeekchain Genesis NFTs on Sepolia — read live from the <a href="https://sepolia.etherscan.io/address/0xc4c7982657f00509548f3a3a41db7fa439a6856b" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">Genesis NFT contract ↗</a> for whichever wallet is connected, so everyone sees their own run.</p>
+        <p class="card-msg" id="genesisStatus" role="status"></p>
+        <div id="genesisNoWallet">
+          <p style="font-size:14.5px; color:var(--soft); margin:0 0 12px">Connect a wallet to see your Genesis Run.</p>
+          <button class="btn" id="genesisConnectBtn" type="button">Connect wallet</button>
+        </div>
+        <div id="genesisBody" hidden>
+          <p class="kicker">Genesis NFTs · <span class="mono" id="genesisAddr" style="text-transform:none; letter-spacing:0"></span></p>
+          <div class="nft-row" id="genesisNftRow"></div>
+          <p id="genesisCount" style="margin:12px 0 0; font-size:14px; color:var(--soft)"></p>
+          <p style="margin:14px 0 0"><a class="btn ghost" href="https://squeekchain.com/genesis" target="_blank" rel="noopener" style="text-decoration:none; display:inline-block">Open Genesis ↗</a></p>
         </div>
       </div>
     </div>
@@ -697,7 +686,7 @@
 
         <div class="card-sec" id="noCardSec" style="border-top:0; padding-top:0; margin-top:0">
           <p class="kicker">Your card</p>
-          <p id="noCardMsg">You don't have a Squeek Maze Card yet. Mint yours from the home page — <strong>Free Mint</strong> (1 per wallet, free on Sepolia, gas only), or the paid <strong>Mint (0.5 ETH)</strong> while paid supply lasts (also 1 per wallet). Once minted, your card and its stats show up here.</p>
+          <p id="noCardMsg">You don't have a Squeek Maze Card yet. Get yours in the <strong>Marketplace</strong> — <strong>Free Mint</strong> (1 per wallet, free on Sepolia, gas only; the same Free Mint button is on the home page too), or <strong>Buy at 0.5 ETH</strong> in the Marketplace's primary sale while paid supply lasts (also 1 per wallet). Once minted, your card and its stats show up here.</p>
         </div>
 
         <div class="card-sec" id="ownedSec" hidden>
@@ -756,7 +745,44 @@
       <div class="mbox wide">
         <button class="mclose" type="button" data-close aria-label="Close">✕</button>
         <h2>Marketplace</h2>
-        <p class="msub">Every Squeek Maze Card listed for sale on the <a href="https://sepolia.etherscan.io/address/0x54A27814cf7EBA18a3030ff32d14671016f4E10b" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">v3 market contract ↗</a>, read live from Sepolia. Prices are in Sepolia testnet ETH; buying transfers the card to your wallet at the exact listed price. To sell your own card, use “List for sale” in <strong>My Card</strong>.</p>
+        <p class="msub">Brand-new, unminted cards are in the <strong>primary sale</strong> at the top — bought straight from the card contract. Cards other players are reselling are under <strong>Cards for sale</strong>, listed on the <a href="https://sepolia.etherscan.io/address/0x54A27814cf7EBA18a3030ff32d14671016f4E10b" target="_blank" rel="noopener" style="text-decoration:underline; text-underline-offset:3px">v3 market contract ↗</a>, read live from Sepolia. Prices are in Sepolia testnet ETH; buying transfers the card to your wallet at the exact listed price. To sell one of your own, use <strong>Sell your card</strong> right below the primary sale.</p>
+        <div class="primary-sale" id="primarySale">
+          <div class="mkt-head">
+            <p class="kicker">Primary sale — new cards</p>
+            <span style="flex:1"></span>
+            <span class="primary-count" id="primarySupplyLine"></span>
+          </div>
+          <p class="primary-note">The remaining unminted supply of the 11,111 collection, minted fresh from the <a href="https://sepolia.etherscan.io/address/0x8f6a173f340BE3004DFD735ECe43d22751513DB0" target="_blank" rel="noopener">v3 card contract ↗</a> the moment you buy. Counts are read live from Sepolia.</p>
+          <p class="card-msg" id="mktMintStatus" role="status"></p>
+          <div class="primary-grid">
+            <div class="primary-card">
+              <div class="mkt-title"><span class="tid">Free Mint</span><span class="tag">1 per wallet</span></div>
+              <p class="primary-count" id="primaryFreeCount">Reading supply from Sepolia…</p>
+              <p class="primary-sub">Gas only — no ETH price.</p>
+              <button class="btn free primary-btn" id="mktFreeMintBtn" type="button">Free Mint</button>
+            </div>
+            <div class="primary-card">
+              <div class="mkt-title"><span class="tid">Paid Mint</span><span class="tag">1 per wallet</span></div>
+              <div class="mkt-price">0.5 <small>Sepolia ETH</small></div>
+              <p class="primary-count" id="primaryPaidCount">Reading supply from Sepolia…</p>
+              <button class="btn paidbuy primary-btn" id="mktPaidMintBtn" type="button">Buy at 0.5 ETH</button>
+            </div>
+          </div>
+        </div>
+        <div class="sell-sale" id="sellSale">
+          <div class="mkt-head">
+            <p class="kicker">Sell your card</p>
+          </div>
+          <p>List one of your own Squeek Maze Cards for sale without leaving the Marketplace — pick your card, set a price in Sepolia ETH, and list it. The <a href="https://sepolia.etherscan.io/address/0x54A27814cf7EBA18a3030ff32d14671016f4E10b" target="_blank" rel="noopener">v3 market contract ↗</a> takes the card into escrow until it sells or you cancel the listing from <strong>My Card</strong>; once listed, it appears under <strong>Cards for sale</strong> below.</p>
+          <p class="card-msg" id="mktSellStatus" role="status"></p>
+          <div class="card-row" id="mktSellForm" hidden>
+            <select class="txt-in" id="mktSellToken" aria-label="Your card to sell"></select>
+            <input class="txt-in" id="mktSellPrice" type="text" inputmode="decimal" placeholder="Price in Sepolia ETH" aria-label="Listing price in Sepolia ETH" />
+            <button class="btn" id="mktSellBtn" type="button">List for sale</button>
+          </div>
+          <p id="mktSellNoCard" hidden>You don't own a card yet — mint one first in the <a href="#primarySale" id="mktSellMintLink">primary sale</a> above.</p>
+          <p id="mktSellConnect">Connect your wallet on Sepolia to sell a card.</p>
+        </div>
         <div class="mkt-head">
           <p class="kicker">Cards for sale</p>
           <span style="flex:1"></span>
@@ -764,7 +790,7 @@
         </div>
         <p class="card-msg" id="mktStatus" role="status"></p>
         <div class="mkt-grid" id="mktGrid"></div>
-        <p class="mkt-empty" id="mktEmpty" hidden>No cards listed yet — be the first: open <strong>My Card</strong>, set a price, and list yours for sale.</p>
+        <p class="mkt-empty" id="mktEmpty" hidden>No cards listed yet — be the first: use <strong>Sell your card</strong> above, set a price, and list yours for sale.</p>
         <div class="card-sec">
           <p class="kicker">Recent activity</p>
           <div class="mkt-feed" id="mktFeed"><p class="mkt-note">Loading activity…</p></div>
@@ -962,15 +988,14 @@
         if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
       }
 
+      /* ONE sound control for the whole page: the header's Sound button.
+         Sound effects and the background music are a single system —
+         both obey soundOn (beeps check it directly; the music scheduler
+         advances silently while it is off), so this one toggle mutes and
+         unmutes everything, and the choice persists in localStorage. */
       function syncSoundLabels() {
-        var on = soundOn ? "true" : "false";
         el("soundBtn").textContent = soundOn ? "Sound: on" : "Sound: off";
-        el("soundBtn").setAttribute("aria-pressed", on);
-        var hb = el("heroSoundBtn");
-        if (hb) {
-          hb.textContent = soundOn ? "♪ Music: on" : "♪ Music: off";
-          hb.setAttribute("aria-pressed", on);
-        }
+        el("soundBtn").setAttribute("aria-pressed", soundOn ? "true" : "false");
       }
       function toggleSound() {
         soundOn = !soundOn;
@@ -988,12 +1013,6 @@
          startMusic() is idempotent, so these listeners can stay live. */
       document.addEventListener("pointerdown", function () { startMusic(); });
       document.addEventListener("keydown", function () { startMusic(); });
-      el("copyBtn").addEventListener("click", function () {
-        var btn = this;
-        function done() { btn.textContent = "Copied ✓"; setTimeout(function () { btn.textContent = "Copy code"; }, 1600); }
-        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText("f5vknnhk").then(done, done);
-        else done();
-      });
 
       /* =====================================================================
          THE MAZE GAME
@@ -1921,11 +1940,14 @@
         m.textContent = txt || "";
         m.className = "card-msg" + (isErr ? " err" : "");
       }
-      /* Mint feedback lives on the hero now (the Free Mint button moved
-         there); it also mirrors into the My Card modal's status line. */
+      /* Mint feedback lives on the hero (the Free Mint button is there)
+         and in the Marketplace's primary sale (both mint buttons live
+         there now); it also mirrors into the My Card modal's status line. */
       function setMintStatus(txt, isErr) {
         var h = el("heroMintStatus");
         if (h) { h.textContent = txt || ""; h.className = "hero-mint-status" + (isErr ? " err" : ""); }
+        var ms = el("mktMintStatus");
+        if (ms) { ms.textContent = txt || ""; ms.className = "card-msg" + (isErr ? " err" : ""); }
         setCardStatus(txt, isErr);
       }
       function renderHeroMint() {
@@ -1947,7 +1969,7 @@
         else if (!walletChainOk) txt += "Wallet connected — switch to Sepolia to mint.";
         else if (freeSoldOut && !cardHasMinted) txt += paidSoldOut
           ? "Free mint sold out, and the paid mint is sold out too."
-          : "Free mint sold out — the paid mint (0.5 ETH) is still open.";
+          : "Free mint sold out — the paid mint (0.5 ETH) is still open in the Marketplace.";
         else if (cardHasMinted) txt += cardHasPaidMinted
           ? "Free and paid cards both minted — see them in “My Card”."
           : "Free card minted — your card is in “My Card”.";
@@ -1961,10 +1983,39 @@
           else if (freeSoldOut) b.textContent = "Free Mint · Sold out";
           else b.textContent = "Free Mint";
         }
-        // Paid mint shows only while this wallet still has its paid mint
-        // available (hasPaidMinted false) and paid supply remains.
-        var pb = el("heroPaidMintBtn");
-        if (pb) pb.hidden = !(cardHasPaidMinted === false && !paidSoldOut);
+        // The paid mint (0.5 ETH) is NOT on the home screen anymore —
+        // it lives in the Marketplace's primary sale (renderPrimarySale).
+      }
+      /* Marketplace primary sale: the remaining UNMINTED supply, bought
+         straight from the v3 card contract — Free Mint (mint(), 1 per
+         wallet) while free supply remains, and Buy at 0.5 ETH
+         (mintPaid(), 1 per wallet) while paid supply remains. Renders
+         from the shared counters (cardFreeMinted / cardPaidMinted /
+         cardTotalMinted / cardHasMinted / cardHasPaidMinted), which
+         fetchMintInfo() reads live from the v3 card on Sepolia. */
+      function renderPrimarySale() {
+        var line = el("primarySupplyLine"), fc = el("primaryFreeCount"), pc = el("primaryPaidCount");
+        var fb = el("mktFreeMintBtn"), pb = el("mktPaidMintBtn");
+        if (!fc || !pc || !fb || !pb) return;
+        if (line) line.textContent = cardTotalMinted != null
+          ? fmtInt(cardTotalMinted) + " / " + fmtInt(TOTAL_SUPPLY) + " minted"
+          : "";
+        var freeLeft = cardFreeMinted != null ? Math.max(0, FREE_SUPPLY - cardFreeMinted) : null;
+        var paidLeft = cardPaidMinted != null ? Math.max(0, PAID_SUPPLY - cardPaidMinted) : null;
+        fc.textContent = freeLeft == null ? "Reading supply from Sepolia…"
+          : fmtInt(freeLeft) + " of " + fmtInt(FREE_SUPPLY) + " free cards left";
+        if (freeLeft === 0) { fb.disabled = true; fb.textContent = "Sold out"; }
+        else if (cardHasMinted === true) { fb.disabled = true; fb.textContent = "Already minted"; }
+        else { fb.disabled = false; fb.textContent = "Free Mint"; }
+        pc.textContent = paidLeft == null ? "Reading supply from Sepolia…"
+          : fmtInt(paidLeft) + " of " + fmtInt(PAID_SUPPLY) + " paid cards left";
+        if (paidLeft === 0) { pb.disabled = true; pb.textContent = "Sold out"; }
+        else if (cardHasPaidMinted === true) { pb.disabled = true; pb.textContent = "Already bought"; }
+        else { pb.disabled = false; pb.textContent = "Buy at 0.5 ETH"; }
+      }
+      function loadPrimarySale() {
+        renderPrimarySale();   // paint the last known state immediately
+        fetchMintInfo();       // live re-read from Sepolia; re-renders on landing
       }
       /* Sepolia read endpoints, best first. 1rpc.io/sepolia was dropped:
          it now rejects even eth_blockNumber without a paid plan (HTTP
@@ -2129,6 +2180,7 @@
           cardHasMinted = snap.has;
           cardHasPaidMinted = snap.hasPaid;
           renderCardModal();
+          renderPrimarySale();
         } catch (e) {
           setMintStatus("Couldn't reach the card contract on Sepolia: " + errText(e), true);
         }
@@ -2260,12 +2312,12 @@
         if (!walletAddr) { setMintStatus("Connect wallet (Sepolia) to mint — approve the connection in your wallet."); connectWallet(); return; }
         if (!walletChainOk) { setMintStatus("Switch to Sepolia to mint — approve the network switch in your wallet."); switchToSepolia(); return; }
         if (cardFreeMinted != null && cardFreeMinted >= FREE_SUPPLY) {
-          setMintStatus("Free mint sold out — all " + fmtInt(FREE_SUPPLY) + " free cards are gone. The paid mint (0.5 ETH) is still open while paid supply lasts.", true);
+          setMintStatus("Free mint sold out — all " + fmtInt(FREE_SUPPLY) + " free cards are gone. The paid mint (0.5 ETH) in the Marketplace is still open while paid supply lasts.", true);
           return;
         }
-        var btn = el("heroMintBtn");
+        var btns = [el("heroMintBtn"), el("mktFreeMintBtn")];
         try {
-          if (btn) btn.disabled = true;
+          btns.forEach(function (b) { if (b) b.disabled = true; });
           setMintStatus("Minting… confirm the free mint in your wallet (gas only, on Sepolia).");
           var card = await cardWrite();
           var tx = await card.mint();
@@ -2291,14 +2343,17 @@
         } catch (e) {
           setMintStatus("Mint failed: " + errText(e), true);
         } finally {
-          if (btn) btn.disabled = false;
+          btns.forEach(function (b) { if (b) b.disabled = false; });
           renderCardModal();
+          renderPrimarySale();
         }
       }
 
       /* Paid mint: mintPaid() with exactly 0.5 Sepolia ETH of value.
          1 per wallet, only while the 1,111 paid supply lasts. The ETH
-         goes to the contract owner on-chain. */
+         goes to the contract owner on-chain. Sold ONLY from the
+         Marketplace's primary sale — there is no paid-mint button on
+         the home screen. */
       async function mintPaidCard() {
         var blocked = cardBlockReason();
         if (blocked) { setMintStatus(blocked, true); return; }
@@ -2306,7 +2361,7 @@
         if (!walletChainOk) { setMintStatus("Switch to Sepolia to mint — approve the network switch in your wallet."); switchToSepolia(); return; }
         if (cardHasPaidMinted) { setMintStatus("You have already used your paid mint — 1 paid card per wallet. Your cards are in “My Card”.", true); return; }
         if (cardPaidMinted != null && cardPaidMinted >= PAID_SUPPLY) { setMintStatus("Paid mint sold out — all " + fmtInt(PAID_SUPPLY) + " paid cards are gone.", true); return; }
-        var btn = el("heroPaidMintBtn");
+        var btn = el("mktPaidMintBtn");
         try {
           if (btn) btn.disabled = true;
           setMintStatus("Paid mint… confirm in your wallet — exactly 0.5 Sepolia ETH, plus gas.");
@@ -2336,6 +2391,7 @@
         } finally {
           if (btn) btn.disabled = false;
           renderCardModal();
+          renderPrimarySale();
         }
       }
 
@@ -2500,8 +2556,115 @@
         m.className = "card-msg" + (isErr ? " err" : "");
       }
       function refreshMarketplace() {
+        loadPrimarySale();
+        loadSellableCards();
         loadMarketListings();
         loadMarketActivity();
+      }
+
+      /* ============ SELL YOUR CARD (inside the Marketplace) ============
+         The same approve + list flow as "List for sale" in My Card,
+         but the seller picks WHICH of their cards to list: the
+         connected wallet's owned SqueekMazeCardV3 tokenIds are
+         discovered from the card contract's Transfer events (from the
+         v3 deployment block — the contract is plain ERC-721, no
+         enumeration) and each candidate is verified with ownerOf, so
+         cards already sitting in market escrow (ownerOf = the market)
+         or transferred away never appear. Listing refreshes the
+         listings grid, the Recent Activity feed and this selector. */
+      var mktSellLoading = false;
+      function setMktSellStatus(txt, isErr) {
+        var m = el("mktSellStatus");
+        if (!m) return;
+        m.textContent = txt || "";
+        m.className = "card-msg" + (isErr ? " err" : "");
+      }
+      async function loadSellableCards() {
+        var form = el("mktSellForm"), noCard = el("mktSellNoCard"), connect = el("mktSellConnect");
+        if (!form || !noCard || !connect) return;
+        if (!walletAddr) {
+          form.hidden = true; noCard.hidden = true; connect.hidden = false;
+          setMktSellStatus("");
+          return;
+        }
+        connect.hidden = true;
+        var blocked = readBlockReason();
+        if (blocked) { form.hidden = true; noCard.hidden = true; setMktSellStatus(blocked, true); return; }
+        if (mktSellLoading) return;
+        mktSellLoading = true;
+        setMktSellStatus("Loading your cards from Sepolia…");
+        try {
+          var ids = await rpcRead(async function (p) {
+            var card = cardRead(p);
+            var events = await card.queryFilter(card.filters.Transfer(null, walletAddr), CARD_DEPLOY_BLOCK, "latest");
+            var seen = {}, out = [];
+            for (var i = 0; i < events.length; i++) {
+              var tid = Number(events[i].args.tokenId);
+              if (seen[tid]) continue;
+              seen[tid] = true;
+              try {
+                var o = await card.ownerOf(tid);
+                if (o.toLowerCase() === walletAddr.toLowerCase()) out.push(tid);
+              } catch (e) {}
+            }
+            out.sort(function (a, b) { return a - b; });
+            return out;
+          });
+          var sel = el("mktSellToken");
+          var prev = sel.value;
+          sel.innerHTML = "";
+          ids.forEach(function (id) {
+            var o = document.createElement("option");
+            o.value = String(id);
+            o.textContent = "Card #" + id;
+            sel.appendChild(o);
+          });
+          if (ids.length && ids.indexOf(Number(prev)) >= 0) sel.value = prev;
+          var has = ids.length > 0;
+          form.hidden = !has;
+          noCard.hidden = has;
+          el("mktSellBtn").disabled = !walletChainOk;
+          setMktSellStatus(walletChainOk ? "" : "Wallet connected, but not on Sepolia — switch to Sepolia to list a card.");
+        } catch (e) {
+          setMktSellStatus("Couldn't load your cards: " + errText(e), true);
+        } finally {
+          mktSellLoading = false;
+        }
+      }
+      async function listFromMarketplace() {
+        var blocked = cardBlockReason();
+        if (blocked) { setMktSellStatus(blocked, true); return; }
+        if (!walletAddr || !walletChainOk) { setMktSellStatus("Connect your wallet on Sepolia first.", true); return; }
+        var tid = parseInt(el("mktSellToken").value, 10);
+        if (isNaN(tid)) { setMktSellStatus("Pick one of your cards first.", true); return; }
+        var priceStr = el("mktSellPrice").value.trim();
+        var priceWei;
+        try { priceWei = ethers.parseEther(priceStr); }
+        catch (e) { setMktSellStatus("Enter a valid price in Sepolia ETH (e.g. 0.01).", true); return; }
+        if (priceWei <= 0n) { setMktSellStatus("Price must be more than 0 Sepolia ETH.", true); return; }
+        var btn = el("mktSellBtn");
+        try {
+          btn.disabled = true;
+          var approved = await rpcRead(async function (p) { return await cardRead(p).isApprovedForAll(walletAddr, MARKET_ADDRESS); });
+          if (!approved) {
+            setMktSellStatus("Approving market… confirm setApprovalForAll in your wallet.");
+            var cardW = await cardWrite();
+            var atx = await cardW.setApprovalForAll(MARKET_ADDRESS, true);
+            await atx.wait();
+          }
+          setMktSellStatus("Listing card #" + tid + " for " + priceStr + " Sepolia ETH… confirm in your wallet.");
+          var market = await marketWrite();
+          var tx = await market.list(tid, priceWei);
+          await tx.wait();
+          setMktSellStatus("Listed! Card #" + tid + " is on the market for " + priceStr + " Sepolia ETH — see it under “Cards for sale”.");
+          el("mktSellPrice").value = "";
+          loadMyCard();
+          refreshMarketplace();
+        } catch (e) {
+          setMktSellStatus("Listing failed: " + errText(e), true);
+        } finally {
+          btn.disabled = false;
+        }
       }
 
       async function loadMarketListings() {
@@ -2792,8 +2955,119 @@
         });
       }
 
+      /* ============ MY GENESIS RUN — per connected wallet ============
+         The Genesis section shows the CONNECTED wallet's own
+         Squeekchain Genesis NFTs, read live from the Genesis NFT
+         contract on Sepolia through the public RPCs (no wallet needed
+         for the reads themselves). Owned tokenIds are discovered from
+         the contract's Transfer events (to = the wallet), scanning
+         backwards from the latest block in 10,000-block chunks until
+         balanceOf() tokens are accounted for (each candidate verified
+         with ownerOf) or the scan floor is reached. There is no
+         per-wallet Squeekchain API endpoint for Aura / rank / referral,
+         so those are simply not shown — nobody else's numbers ever
+         appear here. */
+      const GENESIS_ADDRESS = "0xc4c7982657f00509548f3a3a41db7fa439a6856b";
+      const GENESIS_ABI = [
+        "function balanceOf(address owner) view returns (uint256)",
+        "function ownerOf(uint256 tokenId) view returns (address)",
+        "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)"
+      ];
+      var genesisLoading = false, genesisLoadedFor = null;
+      function genesisRead(p) {
+        return new ethers.Contract(GENESIS_ADDRESS, GENESIS_ABI, p || sepoliaReadProvider());
+      }
+      function setGenesisStatus(txt, isErr) {
+        var m = el("genesisStatus");
+        if (!m) return;
+        m.textContent = txt || "";
+        m.className = "card-msg" + (isErr ? " err" : "");
+      }
+      function renderGenesis() {
+        var noW = el("genesisNoWallet"), body = el("genesisBody");
+        if (!noW || !body) return;
+        noW.hidden = !!walletAddr;
+        body.hidden = !walletAddr;
+        if (walletAddr) el("genesisAddr").textContent = shortAddr(walletAddr);
+      }
+      async function loadGenesisRun() {
+        renderGenesis();
+        if (!walletAddr) { setGenesisStatus(""); return; }
+        if (typeof window.ethers === "undefined") { setGenesisStatus("ethers.js failed to load — Genesis NFTs unavailable right now.", true); return; }
+        if (genesisLoading) return;
+        if (genesisLoadedFor === walletAddr.toLowerCase()) return;   // already showing this wallet's run
+        genesisLoading = true;
+        setGenesisStatus("Reading your Genesis NFTs from Sepolia…");
+        try {
+          var found = await rpcRead(async function (p) {
+            var g = genesisRead(p);
+            var bal = Number(await g.balanceOf(walletAddr));
+            if (bal === 0) return { balance: 0, ids: [] };
+            var iface = new ethers.Interface(GENESIS_ABI);
+            var transferTopic = iface.getEvent("Transfer").topicHash;
+            var toTopic = ethers.zeroPadValue(walletAddr, 32);
+            var latest = await p.getBlockNumber();
+            var FLOOR = Math.max(0, latest - 200000), CHUNK = 10000;
+            var seen = {}, ids = [], end = latest;
+            while (end >= FLOOR && ids.length < bal) {
+              var start = Math.max(FLOOR, end - CHUNK + 1);
+              var logs = await p.getLogs({
+                address: GENESIS_ADDRESS,
+                topics: [transferTopic, null, toTopic],
+                fromBlock: start, toBlock: end
+              });
+              for (var i = logs.length - 1; i >= 0 && ids.length < bal; i--) {
+                var tid = parseInt(logs[i].topics[3], 16);
+                if (seen[tid]) continue;
+                seen[tid] = true;
+                try {
+                  var o = await g.ownerOf(tid);
+                  if (o.toLowerCase() === walletAddr.toLowerCase()) ids.push(tid);
+                } catch (e) {}
+              }
+              end = start - 1;
+            }
+            ids.sort(function (a, b) { return a - b; });
+            return { balance: bal, ids: ids };
+          });
+          genesisLoadedFor = walletAddr.toLowerCase();
+          var row = el("genesisNftRow");
+          row.innerHTML = "";
+          var FACE = "<svg width=\"30\" height=\"30\" viewBox=\"0 0 30 30\"><circle cx=\"15\" cy=\"16\" r=\"8\" fill=\"#e8862a\"/><circle cx=\"9.5\" cy=\"9\" r=\"4\" fill=\"#e8862a\"/><circle cx=\"20.5\" cy=\"9\" r=\"4\" fill=\"#e8862a\"/><circle cx=\"12.8\" cy=\"15\" r=\"1.4\" fill=\"#17171d\"/><circle cx=\"17.2\" cy=\"15\" r=\"1.4\" fill=\"#17171d\"/><ellipse cx=\"15\" cy=\"18.6\" rx=\"2.2\" ry=\"1.5\" fill=\"#17171d\"/></svg>";
+          found.ids.forEach(function (tid) {
+            var d = document.createElement("div");
+            d.className = "nft";
+            var face = document.createElement("div");
+            face.className = "face";
+            face.setAttribute("aria-hidden", "true");
+            face.innerHTML = FACE;
+            var num = document.createElement("div");
+            num.className = "num";
+            num.textContent = "#" + tid;
+            d.appendChild(face);
+            d.appendChild(num);
+            row.appendChild(d);
+          });
+          el("genesisCount").textContent = found.balance === 0
+            ? "This wallet doesn't own any Squeekchain Genesis NFTs yet."
+            : found.balance + (found.balance === 1 ? " Genesis NFT" : " Genesis NFTs") + " in this wallet, read from the Genesis contract on Sepolia." +
+              (found.ids.length < found.balance ? " (" + found.ids.length + " of them found in the recent Transfer history — the rest arrived longer ago.)" : "");
+          setGenesisStatus("");
+        } catch (e) {
+          genesisLoadedFor = null;
+          setGenesisStatus("Couldn't read your Genesis NFTs from Sepolia: " + errText(e), true);
+        } finally {
+          genesisLoading = false;
+        }
+      }
+      function refreshGenesisIfOpen() {
+        var m = el("genesisModal");
+        if (m && !m.hidden) loadGenesisRun();
+      }
+
       el("heroMintBtn").addEventListener("click", function () { sfx.click(); mintCard(); });
-      el("heroPaidMintBtn").addEventListener("click", function () { sfx.click(); mintPaidCard(); });
+      el("mktFreeMintBtn").addEventListener("click", function () { sfx.click(); mintCard(); });
+      el("mktPaidMintBtn").addEventListener("click", function () { sfx.click(); mintPaidCard(); });
       el("syncBtn").addEventListener("click", function () { sfx.click(); syncCardLevel(); });
       el("listBtn").addEventListener("click", function () { sfx.click(); listMyCard(); });
       el("cancelBtn").addEventListener("click", function () { sfx.click(); cancelMyListing(); });
@@ -2801,6 +3075,13 @@
       el("buyBtn").addEventListener("click", function () { sfx.click(); buyListed(); });
       el("mktRefreshBtn").addEventListener("click", function () { sfx.click(); refreshMarketplace(); });
       el("browseMarketBtn").addEventListener("click", function () { sfx.click(); openModal("marketModal"); refreshMarketplace(); });
+      el("mktSellBtn").addEventListener("click", function () { sfx.click(); listFromMarketplace(); });
+      el("mktSellMintLink").addEventListener("click", function (e) {
+        e.preventDefault();
+        var ps = el("primarySale");
+        if (ps) ps.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      el("genesisConnectBtn").addEventListener("click", function () { sfx.click(); connectWallet(); });
 
       function shortAddr(a) { return a.slice(0, 6) + "..." + a.slice(-4); }
       function dayStr(d) {
@@ -2916,6 +3197,7 @@
       function renderWallet() {
         el("walletBtn").textContent = walletAddr ? shortAddr(walletAddr) : "Connect wallet";
         el("ciAddr").textContent = walletAddr ? shortAddr(walletAddr) + (walletChainOk ? " · Sepolia" : " · wrong network") : "No wallet connected";
+        renderGenesis();   // the Genesis modal follows whichever wallet is connected
       }
       function renderCheckin() {
         renderWallet();
@@ -2951,7 +3233,9 @@
           renderCheckin();
           fetchMintInfo();
           refreshCheckinChain();
-          if (walletAddr) loadMyCard();
+          genesisLoadedFor = null;   // account/chain changed — the Genesis run is re-read for the current wallet
+          refreshGenesisIfOpen();
+          if (walletAddr) { loadMyCard(); loadSellableCards(); }
         }).catch(function () { walletChainOk = false; renderCheckin(); });
       }
       function switchToSepolia() {
@@ -2992,6 +3276,9 @@
             fetchMintInfo();
             refreshCheckinChain();
             loadMyCard();
+            loadSellableCards();
+            genesisLoadedFor = null;
+            refreshGenesisIfOpen();
             if (!walletChainOk) {
               setWalletMsg("Wallet connected, but it's not on Sepolia — switching you to Sepolia (chain ID 11155111)…", true);
               switchToSepolia();
@@ -3064,8 +3351,9 @@
         if (walletAddr) {
           walletAddr = null; walletChainOk = false;
           ciChain = null;
+          genesisLoadedFor = null;
           var txEl = el("ciTx"); if (txEl) txEl.hidden = true;
-          resetCardState(); cardHasMinted = null; cardHasPaidMinted = null; cardTotalMinted = null; cardFreeMinted = null; cardPaidMinted = null; renderCardModal(); fetchMintInfo();
+          resetCardState(); cardHasMinted = null; cardHasPaidMinted = null; cardTotalMinted = null; cardFreeMinted = null; cardPaidMinted = null; renderCardModal(); fetchMintInfo(); loadSellableCards();
           setWalletMsg("Wallet disconnected here. The game plays on — reconnect any time to check in.");
           renderCheckin();
         } else connectWallet();
@@ -3138,11 +3426,10 @@
       el("brandBtn").addEventListener("click", function () { closeAllModals(); showView("home"); });
       el("howBtn").addEventListener("click", function () { sfx.click(); openModal("howModal"); });
       el("liveBtn").addEventListener("click", function () { sfx.click(); openModal("liveModal"); });
-      el("genesisBtn").addEventListener("click", function () { sfx.click(); openModal("genesisModal"); });
+      el("genesisBtn").addEventListener("click", function () { sfx.click(); openModal("genesisModal"); loadGenesisRun(); });
       el("checkinOpenBtn").addEventListener("click", function () { sfx.click(); openModal("checkinModal"); refreshCheckinChain(); });
       el("cardBtn").addEventListener("click", function () { sfx.click(); openModal("cardModal"); refreshCardModal(); });
       el("marketBtn").addEventListener("click", function () { sfx.click(); openModal("marketModal"); refreshMarketplace(); });
-      el("heroSoundBtn").addEventListener("click", function () { toggleSound(); });
       document.querySelectorAll(".modal").forEach(function (m) {
         m.addEventListener("click", function (e) {
           if (e.target === m || e.target.classList.contains("backdrop")) closeAllModals();
